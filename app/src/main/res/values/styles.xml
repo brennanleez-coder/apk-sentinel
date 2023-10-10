@@ -1,0 +1,26 @@
+<resources>
+
+    <!-- ActionBar style -->
+    <style name="Widget.Theme.APKSentinel.ActionBar.Fullscreen" parent="Widget.AppCompat.ActionBar">
+        <item name="android:background">@drawable/soft_ui_bg_primary</item>
+        <item name="titleTextStyle">@style/MyActionBarTitleText</item>
+    </style>
+
+    <!-- ButtonBar style -->
+    <style name="Widget.Theme.APKSentinel.ButtonBar.Fullscreen" parent="">
+        <item name="android:background">@drawable/soft_ui_bg_secondary</item>
+        <item name="android:buttonBarStyle">?android:attr/buttonBarStyle</item>
+        <item name="android:buttonBarButtonStyle">@style/SoftUIButtonBarButtonStyle</item>
+    </style>
+
+    <!-- ActionBar Title Text Style -->
+    <style name="MyActionBarTitleText" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
+        <item name="android:textColor">@color/colorOnPrimary</item>
+    </style>
+
+    <!-- Soft UI ButtonBarButton Style -->
+    <style name="SoftUIButtonBarButtonStyle" parent="Widget.AppCompat.Button.Borderless">
+        <item name="android:background">@drawable/soft_ui_button_bg</item>
+    </style>
+
+</resources>

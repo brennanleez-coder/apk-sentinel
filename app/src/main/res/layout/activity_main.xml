@@ -1,0 +1,58 @@
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <!-- Uncomment the Toolbar if you plan to use it -->
+    <!--
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/colorPrimary"
+        app:elevation="2dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="@string/apk_sentinel"
+        app:titleTextColor="@color/colorOnPrimary">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_gravity="bottom"
+            android:background="@color/colorAccent" />
+    </androidx.appcompat.widget.Toolbar>
+    -->
+
+<!--    <com.google.android.material.tabs.TabLayout-->
+<!--        android:id="@+id/tabLayout"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:background="@color/colorPrimary"-->
+<!--        android:contentDescription="APK Sentinel"-->
+<!--        app:elevation="2dp"-->
+<!--        app:tabIndicatorHeight="3dp"-->
+<!--        app:layout_constraintTop_toTopOf="parent"-->
+<!--        app:tabIndicatorColor="#FF0000"-->
+<!--        app:tabRippleColor="@color/colorSecondary"-->
+<!--        app:tabSelectedTextColor="@color/colorPrimary"-->
+<!--        app:tabTextColor="@color/colorPrimaryVariant" />-->
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        android:contentDescription="APK Sentinel"
+        app:elevation="2dp">
+    </com.google.android.material.tabs.TabLayout>
+
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tabLayout" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,67 @@
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/developerOptionsCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="16dp"
+    app:cardCornerRadius="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvDeveloperOptions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/developer_options"
+            android:textColor="#333333"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+        <Switch
+            android:id="@+id/swDeveloperSettings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/developer_settings"
+            android:textColor="#333333"
+            android:height="48dp"
+            android:thumbTint="#00B7C3"
+            android:trackTint="#B0C4DE" />
+
+        <Switch
+            android:id="@+id/swUSBDebugging"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/usb_debugging_mode"
+            android:textColor="#333333"
+            android:height="48dp"
+            android:thumbTint="#00B7C3"
+            android:trackTint="#B0C4DE" />
+
+        <!-- Use LinearLayout wrapper with padding to match the height of the Switch -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvWifiDebugging"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:paddingBottom="1dp"
+                android:text="WiFi Debugging"
+                android:drawablePadding="8dp"
+                android:drawableEnd="@drawable/outline_info_24"
+                android:contentDescription="WiFi Debugging with information about risks"
+                android:tooltipText="Check if Wi-Fi debugging is enabled as it could expose your device to unauthorized access." />
+
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

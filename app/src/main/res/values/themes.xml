@@ -1,0 +1,37 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base Theme -->
+    <style name="Base.Theme.APKSentinel" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
+
+        <!-- Secondary color (variant) -->
+        <item name="colorSecondary">@color/colorPrimaryVariant</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <!-- Background and text colors -->
+        <item name="android:background">@color/white</item>
+        <item name="colorOnBackground">@color/colorOnBackground</item>
+
+        <!-- Accent color -->
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <!-- Default Theme -->
+    <style name="Theme.APKSentinel" parent="Base.Theme.APKSentinel" />
+
+    <!-- Fullscreen Theme -->
+    <style name="Theme.APKSentinel.Fullscreen" parent="Theme.APKSentinel">
+        <item name="android:actionBarStyle">@style/Widget.Theme.APKSentinel.ActionBar.Fullscreen</item>
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="android:windowBackground">@color/white</item>
+    </style>
+
+    <!-- Overlay Theme -->
+    <style name="ThemeOverlay.APKSentinel.FullscreenContainer" parent="">
+        <item name="fullscreenBackgroundColor">@color/colorPrimary</item>
+        <item name="fullscreenTextColor">@color/colorAccent</item>
+    </style>
+
+</resources>

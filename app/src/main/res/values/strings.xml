@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Apk Sentinel</string>
+    <string name="apk_sentinel">APK Sentinel</string>
+    <string name="developer_options">Developer Options</string>
+    <string name="developer_settings">Developer Settings</string>
+    <string name="usb_debugging_mode">USB Debugging Mode</string>
+    <string name="entry_number_format">%d.</string>
+    <string name="app_name_format">AppName: %s</string>
+    <string name="package_name_format">PackageName: %s</string>
+
+</resources>
