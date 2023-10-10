@@ -2,7 +2,7 @@ package com.example.apksentinel.utils
 
 import java.security.MessageDigest
 
-object HashUtils {
+object HashUtil {
 
     fun getSHA256HashOfFile(filePath: String): String {
         val digest = MessageDigest.getInstance("SHA-256")

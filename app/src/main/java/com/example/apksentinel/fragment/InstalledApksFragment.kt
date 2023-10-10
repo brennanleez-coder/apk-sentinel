@@ -18,7 +18,8 @@ import com.example.apksentinel.adapter.ApkListAdapter
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
 import com.example.apksentinel.model.ApkItem
-import com.example.apksentinel.utils.HashUtils.getSHA256HashOfFile
+import com.example.apksentinel.utils.DrawableUtil
+import com.example.apksentinel.utils.HashUtil.getSHA256HashOfFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -124,6 +125,18 @@ class InstalledApksFragment : Fragment() {
         apkList
     }
 
+    private fun insertIntoApkDatabase(apkItem: ApkItem) {
+        val base64Icon = DrawableUtil.convertDrawableToBase64String(apkItem.appIcon)
+
+//        // Create a new ApkItem with the Base64 string instead of the Drawable
+//        val newApkItem = apkItem.copy(appIcon = base64Icon ?: "")
+//
+//        // Insert the newApkItem into your database
+//        val database = ApkItemDatabase.getDatabase(context)
+//        val apkItemDao = database.apkItemDao()
+//        apkItemDao.insert(newApkItem)
+
+    }
     override fun onDestroy() {
         super.onDestroy()
         coroutineScope.cancel()

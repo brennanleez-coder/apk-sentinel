@@ -16,4 +16,8 @@ interface ApkItemDao {
     @Query("SELECT * FROM installed_apks")
     fun getAllApkItems(): Flow<List<ApkItem>>
 
+    @Query("SELECT * FROM installed_apks WHERE id = :apkId")
+    fun getApkItemById(apkId: Long): ApkItem
+
+
 }
