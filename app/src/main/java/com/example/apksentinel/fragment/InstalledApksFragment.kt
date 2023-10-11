@@ -86,9 +86,15 @@ class InstalledApksFragment : Fragment() {
 
     private fun getInstalledPackagesAsync(context: Context) = coroutineScope.async(Dispatchers.IO) {
         val packageManager = context.packageManager
-        val packages = packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS) // Use PackageManager.GET_PERMISSIONS flag to retrieve permissions
+        val packages = packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS) // Use PackageManager.GET_PERMISSIONS flag to retrieve permissions - `packageManager.getInstalledPackages(0)`: This retrieves basic information about all installed packages, without any additional details like permissions, services, etc.
         val apkList: MutableList<ApkItem> = mutableListOf()
-
+//        val sigs: Array<Signature> = context.packageManager.getPackageInfo(
+//            context.packageName,
+//            PackageManager.GET_SIGNATURES
+//        ).signatures
+//        for (sig in sigs) {
+//            Log.d("Apk Sentinel", sig.toString())
+//        }
         for (packageInfo in packages) {
             val packageName = packageInfo.packageName
             val appName = packageManager.getApplicationLabel(packageInfo.applicationInfo).toString()
