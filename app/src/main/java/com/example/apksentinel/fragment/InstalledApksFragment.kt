@@ -79,9 +79,6 @@ class InstalledApksFragment : Fragment() {
         }
 
 
-
-
-
     }
 
     private fun getInstalledPackagesAsync(context: Context) = coroutineScope.async(Dispatchers.IO) {
@@ -131,15 +128,41 @@ class InstalledApksFragment : Fragment() {
         apkList
     }
 
+
     private fun insertIntoApkDatabase(apkItem: ApkItem) {
         val base64Icon = DrawableUtil.convertDrawableToBase64String(apkItem.appIcon)
 
-//        // Create a new ApkItem with the Base64 string instead of the Drawable
-//        val newApkItem = apkItem.copy(appIcon = base64Icon ?: "")
-//
-//        // Insert the newApkItem into your database
-//        val database = ApkItemDatabase.getDatabase(context)
-//        val apkItemDao = database.apkItemDao()
+        // Create a new ApkItem with the Base64 string instead of the Drawable
+        val (
+            appName,
+            packangeName,
+            appIcon,
+            versionName,
+            versionCode,
+            installDate,
+            lastUpdateDate,
+            permissions,
+            isSystemApp,
+            appHash
+        ) = apkItem
+
+//        val apkEntity = com.example.apksentinel.database.entities.ApkItem(
+//            appName = appName,
+//            packageName = packangeName,
+//            appIcon = base64Icon,
+//            versionName = versionName,
+//            versionCode = versionCode,
+//            installDate = installDate,
+//            lastUpdateDate = lastUpdateDate,
+//            permissions = permissions,
+//            isSystemApp = isSystemApp,
+//            appHash = appHash
+//        )
+
+
+        // Insert the newApkItem into your database
+        val database = ApkItemDatabase.getDatabase(this.requireContext())
+        val apkItemDao = database.apkItemDao()
 //        apkItemDao.insert(newApkItem)
 
     }
