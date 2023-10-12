@@ -14,7 +14,7 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
 
     private var apkList: MutableList<ApkItem> = initialApkList.toMutableList()
 
-    // ViewHolder class to represent each item in the RecyclerView
+
     class ApkItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val appNameTextView: TextView = itemView.findViewById(R.id.appNameTextView)
         val packageNameTextView: TextView = itemView.findViewById(R.id.packageNameTextView)
@@ -25,13 +25,12 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
     }
 
 
-    // Inflate the layout and create ViewHolder objects
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ApkItemViewHolder {
         val itemView = LayoutInflater.from(parent.context).inflate(R.layout.apk_item_layout, parent, false)
         return ApkItemViewHolder(itemView)
     }
 
-    // Bind data to each item in the RecyclerView
     override fun onBindViewHolder(holder: ApkItemViewHolder, position: Int) {
         val currentItem = apkList[position]
         holder.entryNumberTextView.text = (position + 1).toString() // +1 because position is 0-based

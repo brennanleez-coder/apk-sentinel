@@ -4,5 +4,6 @@
         <item>All Apps</item>
         <item>System Apps</item>
         <item>Non-System Apps</item>
+        <item>Most Permissions</item>
     </string-array>
 </resources>

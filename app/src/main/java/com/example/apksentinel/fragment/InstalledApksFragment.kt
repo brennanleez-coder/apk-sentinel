@@ -221,7 +221,8 @@ class InstalledApksFragment : Fragment() {
         val finalList = when (filterOption) {
             "System Apps" -> filteredList.filter { it.isSystemApp }
             "Non-System Apps" -> filteredList.filter {!it.isSystemApp}
-            else -> filteredList // Default to "All Apps"
+            "Most Permissions" -> filteredList.sortedByDescending { it.permissions?.size ?: 0 }
+            else -> filteredList
         }
 
 
