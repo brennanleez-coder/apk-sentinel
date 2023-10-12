@@ -6,7 +6,6 @@ import android.graphics.drawable.Drawable
 data class ApkItem(
     val appName: String,
     val packageName: String,
-//    val appIconResId: Int,
     val appIcon: Drawable,
     val versionName: String?,
     val versionCode: Int,

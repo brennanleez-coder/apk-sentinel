@@ -20,6 +20,7 @@
             android:textColor="#333333"
             android:textSize="18sp"
             android:textStyle="bold" />
+
         <Switch
             android:id="@+id/swDeveloperSettings"
             android:layout_width="wrap_content"
@@ -42,7 +43,16 @@
             android:thumbTint="#00B7C3"
             android:trackTint="#B0C4DE" />
 
-        <!-- Use LinearLayout wrapper with padding to match the height of the Switch -->
+        <!-- TextView for displaying the network status -->
+        <TextView
+            android:id="@+id/tvNetworkStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Network Status: Not Connected"
+            android:textColor="#333333"
+            android:textSize="16sp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

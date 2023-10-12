@@ -1,5 +1,6 @@
 package com.example.apksentinel.fragment
 
+import android.app.Dialog
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -89,6 +90,13 @@ class InstalledApksFragment : Fragment() {
             loaderProgressBar.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
         }
+
+        apkListAdapter.listener = object : ApkListAdapter.OnItemClickListener {
+            override fun onItemClick(position: Int) {
+                showDialog(position)
+            }
+        }
+
 
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
@@ -229,6 +237,23 @@ class InstalledApksFragment : Fragment() {
         apkListAdapter.updateData(finalList)
         tvApkCount.text = finalList.size.toString()
     }
+
+    private fun showDialog(position: Int) {
+        // Create the dialog
+        val dialog = Dialog(requireContext())
+        dialog.setContentView(R.layout.dialog_layout)
+
+        // Get the APK item at the clicked position
+        val apkItem = allAppsList[position]
+
+        // Set data from the apkItem to your dialog's views
+        val dialogText: TextView = dialog.findViewById(R.id.dialogText)
+        dialogText.text = apkItem.appName // or other relevant data
+
+        // Show the dialog
+        dialog.show()
+    }
+
 
 
     override fun onDestroy() {

@@ -1,21 +1,38 @@
 package com.example.apksentinel.fragment
 
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkRequest
 import android.os.Bundle
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Switch
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.apksentinel.R
-
 
 class DeveloperOptionsFragment : Fragment() {
 
     private lateinit var swDeveloperSettings: Switch
     private lateinit var swUSBDebugging: Switch
+    private lateinit var tvNetworkStatus: TextView
+    private val connectivityManager by lazy {
+        context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    }
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            updateNetworkStatus("Network Available")
+        }
+
+        override fun onLost(network: Network) {
+            updateNetworkStatus("Network Lost")
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_developer_options, container, false)
@@ -26,16 +43,24 @@ class DeveloperOptionsFragment : Fragment() {
 
         swDeveloperSettings = view.findViewById(R.id.swDeveloperSettings)
         swUSBDebugging = view.findViewById(R.id.swUSBDebugging)
-
+        tvNetworkStatus = view.findViewById(R.id.tvNetworkStatus)
 
         setupListeners()
     }
 
     override fun onResume() {
         super.onResume()
+        val request = NetworkRequest.Builder().build()
+        connectivityManager.registerNetworkCallback(request, networkCallback)
+
         swDeveloperSettings.isChecked = isDeveloperOptionsEnabled
         swUSBDebugging.isChecked = isUSBDebuggingEnabled
         swUSBDebugging.isEnabled = isDeveloperOptionsEnabled
+    }
+
+    override fun onPause() {
+        super.onPause()
+        connectivityManager.unregisterNetworkCallback(networkCallback)
     }
 
     private val isDeveloperOptionsEnabled: Boolean
@@ -53,6 +78,10 @@ class DeveloperOptionsFragment : Fragment() {
                 Settings.Global.ADB_ENABLED, 0
             ) != 0
         }
+
+    private fun updateNetworkStatus(status: String) {
+        tvNetworkStatus.text = "Network Status: $status"
+    }
 
     private fun setupListeners() {
         swDeveloperSettings.setOnCheckedChangeListener { _, isChecked ->
@@ -80,10 +109,7 @@ class DeveloperOptionsFragment : Fragment() {
                     showToast("Please disable USB Debugging!")
                 }
             }
-
         }
-
-
     }
 
     private fun showToast(message: String) {

@@ -14,6 +14,10 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
 
     private var apkList: MutableList<ApkItem> = initialApkList.toMutableList()
 
+    interface OnItemClickListener {
+        fun onItemClick(position: Int)
+    }
+    var listener: OnItemClickListener? = null
 
     class ApkItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val appNameTextView: TextView = itemView.findViewById(R.id.appNameTextView)
@@ -22,6 +26,8 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
         val appIconImageView: ImageView = itemView.findViewById(R.id.appIconImageView)
         val versionNameTextView: TextView = itemView.findViewById(R.id.versionNameTextView)
         val versionCodeTextView: TextView = itemView.findViewById(R.id.versionCodeTextView)
+
+
     }
 
 
@@ -44,6 +50,11 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
         } catch (e: PackageManager.NameNotFoundException) {
             e.printStackTrace()
         }
+
+        holder.itemView.setOnClickListener {
+            listener?.onItemClick(position)
+        }
+
     }
 
 
