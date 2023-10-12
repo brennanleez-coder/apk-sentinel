@@ -7,10 +7,11 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.apksentinel.database.dao.ApkItemDao
 import com.example.apksentinel.database.entities.ApkItem
+import com.example.apksentinel.utils.DbTypeConverter
 
 
 @Database(entities = [ApkItem::class], version = 1, exportSchema = false)
-@TypeConverters(ListStringConverter::class)
+@TypeConverters(DbTypeConverter::class)
 abstract class ApkItemDatabase : RoomDatabase() {
     abstract fun apkItemDao(): ApkItemDao
 

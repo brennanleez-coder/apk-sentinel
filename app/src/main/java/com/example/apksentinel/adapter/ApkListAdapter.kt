@@ -12,7 +12,7 @@ import com.example.apksentinel.model.ApkItem
 
 class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkListAdapter.ApkItemViewHolder>() {
 
-    private val apkList: MutableList<ApkItem> = initialApkList.toMutableList()
+    private var apkList: MutableList<ApkItem> = initialApkList.toMutableList()
 
     // ViewHolder class to represent each item in the RecyclerView
     class ApkItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -20,7 +20,10 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
         val packageNameTextView: TextView = itemView.findViewById(R.id.packageNameTextView)
         val entryNumberTextView: TextView = itemView.findViewById(R.id.entryNumberTextView)
         val appIconImageView: ImageView = itemView.findViewById(R.id.appIconImageView)
+        val versionNameTextView: TextView = itemView.findViewById(R.id.versionNameTextView)
+        val versionCodeTextView: TextView = itemView.findViewById(R.id.versionCodeTextView)
     }
+
 
     // Inflate the layout and create ViewHolder objects
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ApkItemViewHolder {
@@ -32,8 +35,10 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
     override fun onBindViewHolder(holder: ApkItemViewHolder, position: Int) {
         val currentItem = apkList[position]
         holder.entryNumberTextView.text = (position + 1).toString() // +1 because position is 0-based
-        holder.appNameTextView.text = (currentItem.appName)
+        holder.appNameTextView.text = currentItem.appName
         holder.packageNameTextView.text = currentItem.packageName
+        holder.versionNameTextView.text = "Version Name: ${currentItem.versionName}"
+        holder.versionCodeTextView.text = "Version Code: ${currentItem.versionCode}"
         try {
             val appIconDrawable = holder.itemView.context.packageManager.getApplicationIcon(currentItem.packageName)
             holder.appIconImageView.setImageDrawable(appIconDrawable)
@@ -42,7 +47,9 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
         }
     }
 
+
     fun updateData(newData: List<ApkItem>) {
+
         apkList.clear()
         apkList.addAll(newData)
         notifyDataSetChanged()

@@ -8,7 +8,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.ProgressBar
+import androidx.appcompat.widget.SearchView
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -36,7 +39,13 @@ class InstalledApksFragment : Fragment() {
     private lateinit var tvApkCount: TextView
     private lateinit var loaderProgressBar: ProgressBar
 
+    private lateinit var searchView: SearchView
+    private lateinit var spinner: Spinner
+
     private lateinit var apkItemDao: ApkItemDao
+
+    private var allAppsList: List<ApkItem> = listOf()
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_installed_apks, container, false)
@@ -50,8 +59,9 @@ class InstalledApksFragment : Fragment() {
         apkListAdapter = ApkListAdapter(emptyList())
         recyclerView.adapter = apkListAdapter
         tvApkCount = view.findViewById(R.id.tvApkCount)
-        loaderProgressBar = view.findViewById<ProgressBar>(R.id.loaderProgressBar)
-
+        loaderProgressBar = view.findViewById(R.id.loaderProgressBar)
+        searchView = view.findViewById(R.id.searchView)
+        spinner = view.findViewById(R.id.filterSpinner)
 
         loaderProgressBar.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
@@ -61,6 +71,8 @@ class InstalledApksFragment : Fragment() {
 
         coroutineScope.launch {
             val apkList = getInstalledPackagesAsync(requireContext()).await()
+            allAppsList = apkList
+
             apkListAdapter.updateData(apkList)
             tvApkCount.text = apkList.size.toString()
 
@@ -76,6 +88,33 @@ class InstalledApksFragment : Fragment() {
             }, 500) // initial delay for scrolling down
             loaderProgressBar.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
+        }
+
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                // Do something when the user submits a search query
+                filterList(query, spinner.selectedItem.toString())
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                // Do something in real-time as the user types
+                filterList(newText, spinner.selectedItem.toString())
+                return true
+            }
+        })
+
+        // Set up the spinner (dropdown)
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val selectedItem = parent?.getItemAtPosition(position).toString()
+                filterList(searchView.query.toString(), selectedItem)
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                // Do nothing
+            }
         }
 
 
@@ -110,27 +149,29 @@ class InstalledApksFragment : Fragment() {
 
             val apkPath = packageInfo.applicationInfo.sourceDir
             val hash = getSHA256HashOfFile(apkPath)
-            apkList.add(
-                ApkItem(
-                    appName,
-                    packageName,
-                    appIcon,
-                    versionName,
-                    versionCode,
-                    installDate,
-                    lastUpdateDate,
-                    permissions,
-                    isSystemApp,
-                    hash
-                )
+            val apkItem = ApkItem(
+                appName,
+                packageName,
+                appIcon,
+                versionName,
+                versionCode,
+                installDate,
+                lastUpdateDate,
+                permissions,
+                isSystemApp,
+                hash
             )
+            apkList.add(
+                apkItem
+            )
+//            insertIntoApkDatabase(apkItem)
         }
         apkList
     }
 
 
     private fun insertIntoApkDatabase(apkItem: ApkItem) {
-        val base64Icon = DrawableUtil.convertDrawableToBase64String(apkItem.appIcon)
+
 
         // Create a new ApkItem with the Base64 string instead of the Drawable
         val (
@@ -145,27 +186,50 @@ class InstalledApksFragment : Fragment() {
             isSystemApp,
             appHash
         ) = apkItem
+        val base64Icon = DrawableUtil.convertDrawableToBase64String(appIcon)
 
-//        val apkEntity = com.example.apksentinel.database.entities.ApkItem(
-//            appName = appName,
-//            packageName = packangeName,
-//            appIcon = base64Icon,
-//            versionName = versionName,
-//            versionCode = versionCode,
-//            installDate = installDate,
-//            lastUpdateDate = lastUpdateDate,
-//            permissions = permissions,
-//            isSystemApp = isSystemApp,
-//            appHash = appHash
-//        )
+        val apkEntity = permissions?.let {
+            com.example.apksentinel.database.entities.ApkItem(
+                appName = appName,
+                packageName = packangeName,
+                appIcon = base64Icon.toString(),
+                versionName = versionName,
+                versionCode = versionCode,
+                installDate = installDate,
+                lastUpdateDate = lastUpdateDate,
+                permissions = it.toList(),
+                isSystemApp = isSystemApp,
+                appHash = appHash
+            )
+        }
 
 
         // Insert the newApkItem into your database
         val database = ApkItemDatabase.getDatabase(this.requireContext())
         val apkItemDao = database.apkItemDao()
-//        apkItemDao.insert(newApkItem)
+        apkItemDao.insert(apkEntity!!)
 
     }
+
+    private fun filterList(query: String?, filterOption: String) {
+
+        val filteredList = allAppsList.filter {
+            it.appName.contains(query ?: "", ignoreCase = true)
+        }
+
+
+        val finalList = when (filterOption) {
+            "System Apps" -> filteredList.filter { it.isSystemApp }
+            "Non-System Apps" -> filteredList.filter {!it.isSystemApp}
+            else -> filteredList // Default to "All Apps"
+        }
+
+
+        apkListAdapter.updateData(finalList)
+        tvApkCount.text = finalList.size.toString()
+    }
+
+
     override fun onDestroy() {
         super.onDestroy()
         coroutineScope.cancel()

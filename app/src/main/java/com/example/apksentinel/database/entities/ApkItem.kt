@@ -14,7 +14,7 @@ data class ApkItem(
     val versionCode: Int,
     val installDate: Long,
     val lastUpdateDate: Long,
-    val permissions: Array<String>?,
+    val permissions: List<String>,
     val isSystemApp: Boolean,
     val appHash: String
 )
