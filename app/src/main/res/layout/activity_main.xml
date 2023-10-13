@@ -38,6 +38,19 @@
 <!--        app:tabSelectedTextColor="@color/colorPrimary"-->
 <!--        app:tabTextColor="@color/colorPrimaryVariant" />-->
 
+    <ProgressBar
+        android:id="@+id/loaderProgressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminate="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:visibility="visible" />
+
+
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"

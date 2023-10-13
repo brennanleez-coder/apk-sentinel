@@ -5,11 +5,14 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.util.Log
+import android.widget.ProgressBar
+import androidx.viewpager2.widget.ViewPager2
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
 import com.example.apksentinel.model.ApkItem
 import com.example.apksentinel.utils.DrawableUtil
 import com.example.apksentinel.utils.HashUtil
+import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -19,11 +22,16 @@ class ApkSentinel : Application() {
 
     lateinit var apkItemDatabase: ApkItemDatabase
 
+    private lateinit var loaderProgressBar: ProgressBar
+    private lateinit var tabLayout: TabLayout
+    private lateinit var viewPager: ViewPager2
+
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate() {
         super.onCreate()
         try {
+
             val database = ApkItemDatabase.getDatabase(this)
             val apkItemDao = database.apkItemDao()
 
@@ -33,13 +41,10 @@ class ApkSentinel : Application() {
                 // If the database is not populated, get installed packages
                 if (apkCount <= 0) {
                     getInstalledPackagesAsync(this@ApkSentinel, apkItemDao).await()
-                    Log.d("Apk Sentinel", "Populated the database with installed packages.")
                 } else {
                     val allApks = apkItemDao.getAllApkItems()
                     allApks.collect { list ->
-                        list.forEach { apkItem ->
-                            Log.d("Apk Item", apkItem.appName)
-                        }
+                        Log.d("Apk Sentinel", list.size.toString() + " retrieved")
                     }
                 }
             }
@@ -50,19 +55,13 @@ class ApkSentinel : Application() {
                 Log.e("Error", e.message ?: "An error occurred")
             }
         }
-//        CoroutineScope(Dispatchers.IO).launch {
-//            this@ApkSentinel.deleteDatabase("installed_apk")
-//        }
-
-//         Check if the database is populated in the background using Dispatchers.IO
-
     }
 
     private fun getInstalledPackagesAsync(context: Context, apkItemDao: ApkItemDao) = coroutineScope.async(
         Dispatchers.IO) {
         val packageManager = context.packageManager
         val packages = packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS) // Use PackageManager.GET_PERMISSIONS flag to retrieve permissions - `packageManager.getInstalledPackages(0)`: This retrieves basic information about all installed packages, without any additional details like permissions, services, etc.
-        val apkList: MutableList<ApkItem> = mutableListOf()
+//        val apkList: MutableList<ApkItem> = mutableListOf()
 //        val sigs: Array<Signature> = context.packageManager.getPackageInfo(
 //            context.packageName,
 //            PackageManager.GET_SIGNATURES
@@ -106,12 +105,16 @@ class ApkSentinel : Application() {
                 isSystemApp,
                 hash
             )
-            apkList.add(
-                apkItem
-            )
+//            apkList.add(
+//                apkItem
+//            )
+            insertIntoApkDatabase(apkItemDao, apkItem)
+
 
         }
-        apkList
+//        apkList //important for coroutines
+        Log.d("Apk Sentinel", "Populated the database with installed packages.")
+
     }
     private fun insertIntoApkDatabase(apkItemDao: ApkItemDao, apkItem: ApkItem) {
 
@@ -145,6 +148,7 @@ class ApkSentinel : Application() {
                 appHash = appHash
             )
         }
+        //converting from model.ApkItem to database.entity.ApkItem
         if (apkEntity != null) {
             apkItemDao.insert(apkEntity)
         }

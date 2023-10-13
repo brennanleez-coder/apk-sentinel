@@ -1,6 +1,7 @@
 package com.example.apksentinel
 
 import android.os.Bundle
+import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
@@ -22,6 +23,7 @@ class MainActivity : AppCompatActivity() {
 
         val viewPager: ViewPager2 = findViewById(R.id.viewPager)
         val tabLayout: TabLayout = findViewById(R.id.tabLayout)
+        val loaderProgressBar: ProgressBar
 
         // Set up the adapter for ViewPager
         val adapter = ViewPagerAdapter(supportFragmentManager, lifecycle)

@@ -24,7 +24,7 @@ abstract class ApkItemDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     ApkItemDatabase::class.java,
-                    "apk_item_database"
+                    "apk_database"
                 ).build()
                 INSTANCE = instance
                 instance

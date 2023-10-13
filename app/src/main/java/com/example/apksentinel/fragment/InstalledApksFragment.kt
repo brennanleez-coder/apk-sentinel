@@ -78,8 +78,8 @@ class InstalledApksFragment : Fragment() {
                 apkItemDao.getAllApkItems().collect { apkList ->
                     allAppsList = apkList
 
-                    apkListAdapter.updateData(apkList)
-                    tvApkCount.text = apkList.size.toString()
+                    apkListAdapter.updateData(allAppsList)
+                    tvApkCount.text = allAppsList.size.toString()
 
                     // Delay needed to ensure the list is loaded before starting the animation
                     recyclerView.postDelayed({
@@ -99,36 +99,12 @@ class InstalledApksFragment : Fragment() {
                 // Handle the exception here, for instance:
                 Log.e("DatabaseError", "Error retrieving items from database: ${e.message}")
 
-                // Hide loader if visible
                 loaderProgressBar.visibility = View.GONE
 
-                // Optional: Show a user-friendly message or UI update
                  Toast.makeText(context, "Failed to load data! Try restarting the application", Toast.LENGTH_LONG).show()
             }
         }
 
-
-
-//        coroutineScope.launch {
-//            val apkList = apkItemDao.getAllApkItems()
-//            allAppsList = apkList
-//
-//            apkListAdapter.updateData(apkList)
-//            tvApkCount.text = apkList.size.toString()
-//
-//            // Delay needed to ensure the list is loaded before starting the animation
-//            recyclerView.postDelayed({
-//                // Scroll down by a set amount (e.g., 50 pixels) to show scroll animation
-//                recyclerView.smoothScrollBy(0, 100)
-//
-//                // After a short delay, scroll back up
-//                recyclerView.postDelayed({
-//                    recyclerView.smoothScrollBy(0, -100)
-//                }, 500) // delay for scrolling back up
-//            }, 500) // initial delay for scrolling down
-//            loaderProgressBar.visibility = View.GONE
-//            recyclerView.visibility = View.VISIBLE
-//        }
 
         apkListAdapter.listener = object : ApkListAdapter.OnItemClickListener {
             override fun onItemClick(position: Int) {
@@ -226,7 +202,11 @@ class InstalledApksFragment : Fragment() {
         }
 
 
-        isSystemApp.text = if (apkItem.isSystemApp.toString() == "True") "Yes" else "No"
+        if (apkItem.isSystemApp) {
+            isSystemApp.text = "System App: Yes"
+        } else {
+            isSystemApp.text = "System App: No"
+        }
         appHash.text = apkItem.appHash
 
 

@@ -15,7 +15,7 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
     private var apkList: MutableList<ApkItem> = initialApkList.toMutableList()
 
     interface OnItemClickListener {
-        fun onItemClick(position: Int)
+        fun onItemClick(id: Int)
     }
     var listener: OnItemClickListener? = null
 
@@ -39,7 +39,7 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
 
     override fun onBindViewHolder(holder: ApkItemViewHolder, position: Int) {
         val currentItem = apkList[position]
-        holder.entryNumberTextView.text = (position + 1).toString() // +1 because position is 0-based
+        holder.entryNumberTextView.text = currentItem.id.toString()
         holder.appNameTextView.text = currentItem.appName
         holder.packageNameTextView.text = currentItem.packageName
         holder.versionNameTextView.text = "Version Name: ${currentItem.versionName}"
@@ -52,7 +52,8 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
         }
 
         holder.itemView.setOnClickListener {
-            listener?.onItemClick(position)
+            listener?.onItemClick(currentItem.id.toInt()-1)
+            //tbh idk why must -1 when it is 1-based
         }
 
     }
