@@ -19,5 +19,8 @@ interface ApkItemDao {
     @Query("SELECT * FROM installed_apks WHERE id = :apkId")
     fun getApkItemById(apkId: Long): ApkItem
 
+    @Query("SELECT COUNT(*) FROM installed_apks")
+    fun getCount(): Int
+
 
 }

@@ -1,19 +1,20 @@
 package com.example.apksentinel.fragment
 
 import android.app.Dialog
-import android.content.Context
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
+import android.widget.ImageView
 import android.widget.ProgressBar
-import androidx.appcompat.widget.SearchView
 import android.widget.Spinner
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,12 +22,11 @@ import com.example.apksentinel.R
 import com.example.apksentinel.adapter.ApkListAdapter
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
-import com.example.apksentinel.model.ApkItem
+import com.example.apksentinel.database.entities.ApkItem
+import com.example.apksentinel.utils.DateUtil
 import com.example.apksentinel.utils.DrawableUtil
-import com.example.apksentinel.utils.HashUtil.getSHA256HashOfFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
@@ -67,29 +67,68 @@ class InstalledApksFragment : Fragment() {
         loaderProgressBar.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
 
-        apkItemDao = ApkItemDatabase.getDatabase(this.requireContext()).apkItemDao()
-        Log.d("Apk Sentinel", apkItemDao.toString() + "Created!")
+        val database = ApkItemDatabase.getDatabase(this.requireContext())
+        Log.d("Apk Sentinel", "Retrieved Database Instance")
+        val apkItemDao = database.apkItemDao()
+        Log.d("Apk Sentinel", "Retrieved Apk Item Dao")
+
 
         coroutineScope.launch {
-            val apkList = getInstalledPackagesAsync(requireContext()).await()
-            allAppsList = apkList
+            try {
+                apkItemDao.getAllApkItems().collect { apkList ->
+                    allAppsList = apkList
 
-            apkListAdapter.updateData(apkList)
-            tvApkCount.text = apkList.size.toString()
+                    apkListAdapter.updateData(apkList)
+                    tvApkCount.text = apkList.size.toString()
 
-            // Delay needed to ensure the list is loaded before starting the animation
-            recyclerView.postDelayed({
-                // Scroll down by a set amount (e.g., 50 pixels) to show scroll animation
-                recyclerView.smoothScrollBy(0, 100)
+                    // Delay needed to ensure the list is loaded before starting the animation
+                    recyclerView.postDelayed({
+                        // Scroll down by a set amount (e.g., 50 pixels) to show scroll animation
+                        recyclerView.smoothScrollBy(0, 100)
 
-                // After a short delay, scroll back up
-                recyclerView.postDelayed({
-                    recyclerView.smoothScrollBy(0, -100)
-                }, 500) // delay for scrolling back up
-            }, 500) // initial delay for scrolling down
-            loaderProgressBar.visibility = View.GONE
-            recyclerView.visibility = View.VISIBLE
+                        // After a short delay, scroll back up
+                        recyclerView.postDelayed({
+                            recyclerView.smoothScrollBy(0, -100)
+                        }, 500) // delay for scrolling back up
+                    }, 500) // initial delay for scrolling down
+
+                    loaderProgressBar.visibility = View.GONE
+                    recyclerView.visibility = View.VISIBLE
+                }
+            } catch (e: Exception) {
+                // Handle the exception here, for instance:
+                Log.e("DatabaseError", "Error retrieving items from database: ${e.message}")
+
+                // Hide loader if visible
+                loaderProgressBar.visibility = View.GONE
+
+                // Optional: Show a user-friendly message or UI update
+                 Toast.makeText(context, "Failed to load data! Try restarting the application", Toast.LENGTH_LONG).show()
+            }
         }
+
+
+
+//        coroutineScope.launch {
+//            val apkList = apkItemDao.getAllApkItems()
+//            allAppsList = apkList
+//
+//            apkListAdapter.updateData(apkList)
+//            tvApkCount.text = apkList.size.toString()
+//
+//            // Delay needed to ensure the list is loaded before starting the animation
+//            recyclerView.postDelayed({
+//                // Scroll down by a set amount (e.g., 50 pixels) to show scroll animation
+//                recyclerView.smoothScrollBy(0, 100)
+//
+//                // After a short delay, scroll back up
+//                recyclerView.postDelayed({
+//                    recyclerView.smoothScrollBy(0, -100)
+//                }, 500) // delay for scrolling back up
+//            }, 500) // initial delay for scrolling down
+//            loaderProgressBar.visibility = View.GONE
+//            recyclerView.visibility = View.VISIBLE
+//        }
 
         apkListAdapter.listener = object : ApkListAdapter.OnItemClickListener {
             override fun onItemClick(position: Int) {
@@ -101,19 +140,16 @@ class InstalledApksFragment : Fragment() {
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                // Do something when the user submits a search query
                 filterList(query, spinner.selectedItem.toString())
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                // Do something in real-time as the user types
                 filterList(newText, spinner.selectedItem.toString())
                 return true
             }
         })
 
-        // Set up the spinner (dropdown)
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val selectedItem = parent?.getItemAtPosition(position).toString()
@@ -121,101 +157,9 @@ class InstalledApksFragment : Fragment() {
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
-                // Do nothing
             }
         }
 
-
-    }
-
-    private fun getInstalledPackagesAsync(context: Context) = coroutineScope.async(Dispatchers.IO) {
-        val packageManager = context.packageManager
-        val packages = packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS) // Use PackageManager.GET_PERMISSIONS flag to retrieve permissions - `packageManager.getInstalledPackages(0)`: This retrieves basic information about all installed packages, without any additional details like permissions, services, etc.
-        val apkList: MutableList<ApkItem> = mutableListOf()
-//        val sigs: Array<Signature> = context.packageManager.getPackageInfo(
-//            context.packageName,
-//            PackageManager.GET_SIGNATURES
-//        ).signatures
-//        for (sig in sigs) {
-//            Log.d("Apk Sentinel", sig.toString())
-//        }
-        for (packageInfo in packages) {
-            val packageName = packageInfo.packageName
-            val appName = packageManager.getApplicationLabel(packageInfo.applicationInfo).toString()
-            val appIcon = packageManager.getApplicationIcon(packageName)
-            val versionName = packageInfo.versionName
-            val versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                packageInfo.longVersionCode.toInt()
-            } else {
-                packageInfo.versionCode
-            }
-            val installDate = packageInfo.firstInstallTime
-            val lastUpdateDate = packageInfo.lastUpdateTime
-            val permissions = packageInfo.requestedPermissions
-            val isSystemApp = (packageInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-
-
-            val apkPath = packageInfo.applicationInfo.sourceDir
-            val hash = getSHA256HashOfFile(apkPath)
-            val apkItem = ApkItem(
-                appName,
-                packageName,
-                appIcon,
-                versionName,
-                versionCode,
-                installDate,
-                lastUpdateDate,
-                permissions,
-                isSystemApp,
-                hash
-            )
-            apkList.add(
-                apkItem
-            )
-//            insertIntoApkDatabase(apkItem)
-        }
-        apkList
-    }
-
-
-    private fun insertIntoApkDatabase(apkItem: ApkItem) {
-
-
-        // Create a new ApkItem with the Base64 string instead of the Drawable
-        val (
-            appName,
-            packangeName,
-            appIcon,
-            versionName,
-            versionCode,
-            installDate,
-            lastUpdateDate,
-            permissions,
-            isSystemApp,
-            appHash
-        ) = apkItem
-        val base64Icon = DrawableUtil.convertDrawableToBase64String(appIcon)
-
-        val apkEntity = permissions?.let {
-            com.example.apksentinel.database.entities.ApkItem(
-                appName = appName,
-                packageName = packangeName,
-                appIcon = base64Icon.toString(),
-                versionName = versionName,
-                versionCode = versionCode,
-                installDate = installDate,
-                lastUpdateDate = lastUpdateDate,
-                permissions = it.toList(),
-                isSystemApp = isSystemApp,
-                appHash = appHash
-            )
-        }
-
-
-        // Insert the newApkItem into your database
-        val database = ApkItemDatabase.getDatabase(this.requireContext())
-        val apkItemDao = database.apkItemDao()
-        apkItemDao.insert(apkEntity!!)
 
     }
 
@@ -229,7 +173,7 @@ class InstalledApksFragment : Fragment() {
         val finalList = when (filterOption) {
             "System Apps" -> filteredList.filter { it.isSystemApp }
             "Non-System Apps" -> filteredList.filter {!it.isSystemApp}
-            "Most Permissions" -> filteredList.sortedByDescending { it.permissions?.size ?: 0 }
+            "Most Permissions" -> filteredList.sortedWith(compareByDescending { it.permissions?.size ?: Int.MIN_VALUE })
             else -> filteredList
         }
 
@@ -239,19 +183,59 @@ class InstalledApksFragment : Fragment() {
     }
 
     private fun showDialog(position: Int) {
-        // Create the dialog
         val dialog = Dialog(requireContext())
         dialog.setContentView(R.layout.dialog_layout)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         // Get the APK item at the clicked position
         val apkItem = allAppsList[position]
 
         // Set data from the apkItem to your dialog's views
-        val dialogText: TextView = dialog.findViewById(R.id.dialogText)
-        dialogText.text = apkItem.appName // or other relevant data
+        val appName: TextView = dialog.findViewById(R.id.appName)
+        val appIcon: ImageView = dialog.findViewById(R.id.appIcon)
+        val packageName: TextView = dialog.findViewById(R.id.packageName)
+        val versionInfo: TextView = dialog.findViewById(R.id.versionInfo)
+        val installDate: TextView = dialog.findViewById(R.id.installDate)
+        val lastUpdateDate: TextView = dialog.findViewById(R.id.lastUpdateDate)
+        val permissionsHeader: TextView = dialog.findViewById(R.id.permissionsHeader)
+        val permissions: TextView = dialog.findViewById(R.id.permissions)
+        val isSystemApp: TextView = dialog.findViewById(R.id.isSystemApp)
+        val appHash: TextView = dialog.findViewById(R.id.appHash)
 
-        // Show the dialog
+        appName.text = apkItem.appName
+        val drawableIcon = DrawableUtil.convertBase64StringToDrawable(apkItem.appIcon, this.requireContext())
+        appIcon.setImageDrawable(drawableIcon)
+        packageName.text = apkItem.packageName
+        versionInfo.text = apkItem.versionName
+        installDate.text = DateUtil.formatDate(apkItem.installDate)
+        lastUpdateDate.text = DateUtil.formatDate(apkItem.lastUpdateDate)
+
+
+        val numPermissions = apkItem.permissions?.size ?: 0
+
+        permissionsHeader.text = if (numPermissions > 0) {
+            "Permissions ($numPermissions)"
+        } else {
+            "No permissions required"
+        }
+
+        if (numPermissions == 0) {
+            permissions.visibility = View.GONE
+        } else {
+            permissions.text = apkItem.permissions!!.joinToString("\n")
+        }
+
+
+        isSystemApp.text = if (apkItem.isSystemApp.toString() == "True") "Yes" else "No"
+        appHash.text = apkItem.appHash
+
+
+
         dialog.show()
+        val closeButton: ImageView = dialog.findViewById(R.id.closeButton)
+        closeButton.setOnClickListener {
+            dialog.dismiss()
+        }
     }
 
 

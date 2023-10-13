@@ -8,7 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.apksentinel.R
-import com.example.apksentinel.model.ApkItem
+import com.example.apksentinel.database.entities.ApkItem
 
 class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkListAdapter.ApkItemViewHolder>() {
 

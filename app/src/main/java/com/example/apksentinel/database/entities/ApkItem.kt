@@ -1,9 +1,10 @@
 package com.example.apksentinel.database.entities
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "installed_apks")
+@Entity(tableName = "installed_apks",indices = [Index(value = ["packageName"], unique = true)])
 data class ApkItem(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,

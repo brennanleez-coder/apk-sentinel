@@ -1,6 +1,8 @@
 package com.example.apksentinel.utils
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -24,4 +26,11 @@ object DrawableUtil {
         val byteArray = byteArrayOutputStream.toByteArray()
         return Base64.encodeToString(byteArray, Base64.DEFAULT)
     }
+
+    fun convertBase64StringToDrawable(base64String: String, context: Context): Drawable? {
+        val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
+        val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+        return BitmapDrawable(context.resources, bitmap)
+    }
+
 }
