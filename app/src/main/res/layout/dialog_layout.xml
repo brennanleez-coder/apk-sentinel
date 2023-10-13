@@ -9,7 +9,8 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:padding="16dp">
 
         <ImageView
             android:id="@+id/closeButton"
@@ -17,15 +18,12 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
-            android:layout_margin="8dp"
-            android:src="@android:drawable/ic_menu_close_clear_cancel" /> <!-- Replace with your close icon -->
+            android:src="@android:drawable/ic_menu_close_clear_cancel" />
 
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/closeButton"
-            android:background="@android:color/white"
-            android:padding="16dp">
+            android:layout_below="@id/closeButton">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -36,6 +34,14 @@
                     android:id="@+id/appIcon"
                     android:layout_width="80dp"
                     android:layout_height="80dp"
+                    android:layout_gravity="center"
+                    android:layout_marginBottom="16dp" />
+
+                <CheckBox
+                    android:id="@+id/isSystemApp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="System App"
                     android:layout_gravity="center"
                     android:layout_marginBottom="16dp" />
 
@@ -53,8 +59,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:layout_marginBottom="16dp"
-                    android:textColor="@android:color/darker_gray" />
+                    android:textColor="@android:color/darker_gray"
+                    android:layout_marginBottom="16dp" />
 
                 <TextView
                     android:id="@+id/versionInfo"
@@ -67,12 +73,14 @@
                     android:id="@+id/installDate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:text="Installed on: "
                     android:layout_marginBottom="8dp" />
 
                 <TextView
                     android:id="@+id/lastUpdateDate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:text="Last Updated: "
                     android:layout_marginBottom="8dp" />
 
                 <TextView
@@ -89,12 +97,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp" />
 
-                <TextView
-                    android:id="@+id/isSystemApp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/appHash"

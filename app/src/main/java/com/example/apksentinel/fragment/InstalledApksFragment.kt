@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
+import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.Spinner
@@ -175,7 +176,7 @@ class InstalledApksFragment : Fragment() {
         val lastUpdateDate: TextView = dialog.findViewById(R.id.lastUpdateDate)
         val permissionsHeader: TextView = dialog.findViewById(R.id.permissionsHeader)
         val permissions: TextView = dialog.findViewById(R.id.permissions)
-        val isSystemApp: TextView = dialog.findViewById(R.id.isSystemApp)
+        val isSystemApp: CheckBox = dialog.findViewById(R.id.isSystemApp)
         val appHash: TextView = dialog.findViewById(R.id.appHash)
 
         appName.text = apkItem.appName
@@ -203,9 +204,9 @@ class InstalledApksFragment : Fragment() {
 
 
         if (apkItem.isSystemApp) {
-            isSystemApp.text = "System App: Yes"
+            isSystemApp.isChecked = true
         } else {
-            isSystemApp.text = "System App: No"
+            isSystemApp.isChecked = false
         }
         appHash.text = apkItem.appHash
 
