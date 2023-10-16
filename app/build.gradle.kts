@@ -61,6 +61,9 @@ dependencies {
     implementation("androidx.room:room-ktx:2.4.1")
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.0")
+    implementation("com.github.AnyChart:AnyChart-Android:1.1.5")
+
+
 
 
 }
