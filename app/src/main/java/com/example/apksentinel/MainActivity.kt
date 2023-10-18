@@ -1,8 +1,19 @@
 package com.example.apksentinel
 
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.widget.Button
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.example.apksentinel.adapter.ViewPagerAdapter
@@ -14,22 +25,14 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        //load developer options card and installed APK
-//        loadPages(savedInstanceState,
-//            Pair(R.id.includedDeveloperOptionsCard, DeveloperOptionsFragment.newInstance()),
-//            Pair(R.id.containerInstalledApks, InstalledApksFragment.newInstance())
-//            )
-
         val viewPager: ViewPager2 = findViewById(R.id.viewPager)
         val tabLayout: TabLayout = findViewById(R.id.tabLayout)
-        val loaderProgressBar: ProgressBar
 
-        // Set up the adapter for ViewPager
+
+
         val adapter = ViewPagerAdapter(supportFragmentManager, lifecycle)
         viewPager.adapter = adapter
 
-        // Connect TabLayout with ViewPager2
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             when (position) {
                 0 -> tab.text = "Dashboard"
@@ -50,4 +53,6 @@ class MainActivity : AppCompatActivity() {
             transaction.commit()
         }
     }
+
+
 }

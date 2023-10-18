@@ -1,11 +1,21 @@
 package com.example.apksentinel
 
+import android.Manifest
+import android.app.Activity
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.ProgressBar
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
@@ -20,16 +30,19 @@ import kotlinx.coroutines.launch
 
 class ApkSentinel : Application() {
 
-    lateinit var apkItemDatabase: ApkItemDatabase
-
-    private lateinit var loaderProgressBar: ProgressBar
-    private lateinit var tabLayout: TabLayout
-    private lateinit var viewPager: ViewPager2
-
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
-
+    private val handler = Handler(Looper.getMainLooper())
+    private val notificationRunnable: Runnable = object : Runnable {
+        override fun run() {
+            sendNotification(this@ApkSentinel, "asd", "asd")
+            handler.postDelayed(this, 5000) // 5 seconds
+        }
+    }
     override fun onCreate() {
         super.onCreate()
+        createNotificationChannel()
+        sendNotification(this@ApkSentinel, "asd", "asd")
+        handler.post(notificationRunnable)
         try {
 
             val database = ApkItemDatabase.getDatabase(this)
@@ -153,8 +166,55 @@ class ApkSentinel : Application() {
             apkItemDao.insert(apkEntity)
         }
 
-
     }
+
+    private fun sendNotification(context: Context, packageName: String, version: String) {
+        val notificationId = 101 // Just a random unique ID
+
+        val builder = NotificationCompat.Builder(context, "YOUR_CHANNEL_ID")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("App Installed")
+            .setContentText("$packageName $version installed.")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            if (context is Activity) { // Check if the context is an instance of Activity
+                ActivityCompat.requestPermissions(
+                    context,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    REQUEST_NOTIFICATION_PERMISSION
+                )
+            }
+            return
+        }
+
+        val notificationManager = NotificationManagerCompat.from(context)
+        notificationManager.notify(notificationId, builder.build())
+    }
+
+    // Add this constant outside the function
+    val REQUEST_NOTIFICATION_PERMISSION = 1
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "Channel Name"
+            val descriptionText = "Channel Description"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val channel = NotificationChannel("YOUR_CHANNEL_ID", name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+            Log.d("Apk Sentinel", notificationManager.toString())
+
+        }
+    }
+
 
 
 
