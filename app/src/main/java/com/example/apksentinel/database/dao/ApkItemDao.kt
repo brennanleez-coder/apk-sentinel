@@ -14,7 +14,7 @@ interface ApkItemDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(apkItem: ApkItem): Long
 
-    //when using corouines, dont use suspend
+    //when using coroutines, dont use suspend
     @Query("SELECT * FROM installed_apks")
     fun getAllApkItems(): Flow<List<ApkItem>>
 
@@ -34,6 +34,7 @@ interface ApkItemDao {
     fun getAppsByPermissionCount(): List<AppPermissionCount>
     //The difference between the original string length and the length after removing the commas = total number of commas.
     //Since the number of items in a comma-separated list is always one more than the number of commas, you add 1 to the count of commas to get the count of permissions.
-
+    @Query("SELECT appHash FROM installed_apks WHERE packageName = :packageName LIMIT 1")
+    fun getHashForApp(packageName: String): String?
 
 }

@@ -215,6 +215,11 @@ class ApkSentinel : Application() {
         }
     }
 
+//    suspend fun isHashDifferentForNewApk(appName: String, newHash: String): Boolean {
+//        val existingHash = apkItemDao.getHashForApp(appName)
+//        return existingHash != null && existingHash != newHash
+//    }
+
 
 
 
