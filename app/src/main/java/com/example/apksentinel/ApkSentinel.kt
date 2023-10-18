@@ -3,13 +3,16 @@ package com.example.apksentinel
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent.getActivity
 import android.content.Context
+import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
 import com.example.apksentinel.model.ApkItem
@@ -23,6 +26,8 @@ import kotlinx.coroutines.launch
 
 class ApkSentinel : Application() {
 
+    val receiver = ApkInstallReceiver()
+
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
     private val handler = Handler(Looper.getMainLooper())
     private val notificationRunnable: Runnable = object : Runnable {
@@ -31,11 +36,16 @@ class ApkSentinel : Application() {
             handler.postDelayed(this, 5000) // 5 seconds
         }
     }
+
     override fun onCreate() {
         super.onCreate()
         NotificationUtil.createNotificationChannel(this)
 //        NotificationUtil.sendNotification(this@ApkSentinel, "Test", "Test")
 //        handler.post(notificationRunnable)
+
+        setUpUninstallReceiver()
+
+
         try {
 
             val database = ApkItemDatabase.getDatabase(this)
@@ -63,6 +73,13 @@ class ApkSentinel : Application() {
                 Log.e("Error", e.message ?: "An error occurred")
             }
         }
+    }
+
+    private fun setUpUninstallReceiver() {
+        val filter = IntentFilter()
+        filter.addAction("android.intent.action.PACKAGE_REMOVED")
+        filter.addDataScheme("package")
+        registerReceiver(receiver, filter)
     }
 
     private fun getInstalledPackagesAsync(context: Context, apkItemDao: ApkItemDao) = coroutineScope.async(
@@ -168,6 +185,11 @@ class ApkSentinel : Application() {
 //        val existingHash = apkItemDao.getHashForApp(appName)
 //        return existingHash != null && existingHash != newHash
 //    }
+
+    override fun onTerminate() {
+        super.onTerminate()
+        unregisterReceiver(receiver)
+    }
 
 
 
