@@ -55,10 +55,9 @@ class DashboardFragment : Fragment() {
                 val systemAppsCount = apkItemDao.countSystemApps()
                 val nonSystemAppsCount = apkItemDao.countNonSystemApps()
                 val appsByPermissionCount = apkItemDao.getAppsByPermissionCount()
-                Log.d("Apk Sentinel", systemAppsCount.toString())
-                Log.d("Apk Sentinel", nonSystemAppsCount.toString())
-                Log.d("Apk Sentinel", appsByPermissionCount.toString())
-
+//                Log.d("Apk Sentinel", systemAppsCount.toString())
+//                Log.d("Apk Sentinel", nonSystemAppsCount.toString())
+//                Log.d("Apk Sentinel", appsByPermissionCount.toString())
 
                 withContext(Dispatchers.Main) {
                     val data: MutableList<DataEntry> = ArrayList()
@@ -75,7 +74,7 @@ class DashboardFragment : Fragment() {
 
                     pieChartView.setChart(pie)
 
-//
+//                   Uncomment this chunk to show Bar Chart
 //                    val barChartView: AnyChartView = view.findViewById(R.id.bar_chart)
 //                    APIlib.getInstance().setActiveAnyChartView(barChartView);
 //
