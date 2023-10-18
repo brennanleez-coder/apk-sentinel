@@ -78,6 +78,7 @@ class ApkSentinel : Application() {
     private fun setUpUninstallReceiver() {
         val filter = IntentFilter()
         filter.addAction("android.intent.action.PACKAGE_REMOVED")
+        filter.addAction("android.intent.action.PACKAGE_ADDED")
         filter.addDataScheme("package")
         registerReceiver(receiver, filter)
     }
