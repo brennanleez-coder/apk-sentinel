@@ -1,4 +1,4 @@
-package com.example.apksentinel
+package com.example.apksentinel.receiver
 
 import android.content.BroadcastReceiver
 import android.content.Context

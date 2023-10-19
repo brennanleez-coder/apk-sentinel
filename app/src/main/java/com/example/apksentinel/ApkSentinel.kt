@@ -11,6 +11,8 @@ import android.util.Log
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
 import com.example.apksentinel.model.ApkItem
+import com.example.apksentinel.receiver.ApkInstallReceiver
+import com.example.apksentinel.receiver.DeveloperOptionsReceiver
 import com.example.apksentinel.utils.DrawableUtil
 import com.example.apksentinel.utils.HashUtil
 import com.example.apksentinel.utils.NotificationUtil
@@ -21,7 +23,8 @@ import kotlinx.coroutines.launch
 
 class ApkSentinel : Application() {
 
-    val receiver = ApkInstallReceiver()
+    val apkInstallReceiver = ApkInstallReceiver()
+    val developerOptionsReceiver = DeveloperOptionsReceiver()
 
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
     private val handler = Handler(Looper.getMainLooper())
@@ -39,7 +42,7 @@ class ApkSentinel : Application() {
 //        handler.post(notificationRunnable)
 
         setupApkReceiver()
-
+        setupDevOptionsReceiver();
 
         try {
 
@@ -70,13 +73,19 @@ class ApkSentinel : Application() {
         }
     }
 
+    private fun setupDevOptionsReceiver() {
+        val filter = IntentFilter()
+        filter.addAction("DeveloperOptionsChanged")
+        filter.addAction("UsbDebuggingChanged")
+        registerReceiver(developerOptionsReceiver, filter)
+    }
     private fun setupApkReceiver() {
         val filter = IntentFilter()
         filter.addAction("android.intent.action.PACKAGE_REMOVED")
         filter.addAction("android.intent.action.PACKAGE_ADDED")
         filter.addAction("android.intent.action.PACKAGE_REPLACED")
         filter.addDataScheme("package")
-        registerReceiver(receiver, filter)
+        registerReceiver(apkInstallReceiver, filter)
     }
 
     private fun getInstalledPackagesAsync(context: Context, apkItemDao: ApkItemDao) = coroutineScope.async(
@@ -185,7 +194,9 @@ class ApkSentinel : Application() {
 
     override fun onTerminate() {
         super.onTerminate()
-        unregisterReceiver(receiver)
+        unregisterReceiver(apkInstallReceiver)
+        unregisterReceiver(developerOptionsReceiver)
+
     }
 
 

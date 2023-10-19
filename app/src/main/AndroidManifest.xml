@@ -21,6 +21,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.READ_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
 
 
 
@@ -50,7 +53,7 @@
         </activity>
 
         <receiver
-            android:name=".ApkInstallReceiver"
+            android:name=".receiver.ApkInstallReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -58,6 +61,15 @@
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
+        <receiver
+            android:name=".receiver.DeveloperOptionsReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS_CHANGED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
