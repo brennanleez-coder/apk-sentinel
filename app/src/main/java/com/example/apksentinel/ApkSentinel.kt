@@ -1,18 +1,13 @@
 package com.example.apksentinel
 
 import android.app.Application
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent.getActivity
 import android.content.Context
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
 import com.example.apksentinel.model.ApkItem
@@ -43,7 +38,7 @@ class ApkSentinel : Application() {
 //        NotificationUtil.sendNotification(this@ApkSentinel, "Test", "Test")
 //        handler.post(notificationRunnable)
 
-        setUpUninstallReceiver()
+        setupApkReceiver()
 
 
         try {
@@ -75,10 +70,11 @@ class ApkSentinel : Application() {
         }
     }
 
-    private fun setUpUninstallReceiver() {
+    private fun setupApkReceiver() {
         val filter = IntentFilter()
         filter.addAction("android.intent.action.PACKAGE_REMOVED")
         filter.addAction("android.intent.action.PACKAGE_ADDED")
+        filter.addAction("android.intent.action.PACKAGE_REPLACED")
         filter.addDataScheme("package")
         registerReceiver(receiver, filter)
     }
