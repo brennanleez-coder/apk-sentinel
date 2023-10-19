@@ -91,15 +91,8 @@ class ApkSentinel : Application() {
     private fun getInstalledPackagesAsync(context: Context, apkItemDao: ApkItemDao) = coroutineScope.async(
         Dispatchers.IO) {
         val packageManager = context.packageManager
-        val packages = packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS) // Use PackageManager.GET_PERMISSIONS flag to retrieve permissions - `packageManager.getInstalledPackages(0)`: This retrieves basic information about all installed packages, without any additional details like permissions, services, etc.
-//        val apkList: MutableList<ApkItem> = mutableListOf()
-//        val sigs: Array<Signature> = context.packageManager.getPackageInfo(
-//            context.packageName,
-//            PackageManager.GET_SIGNATURES
-//        ).signatures
-//        for (sig in sigs) {
-//            Log.d("Apk Sentinel", sig.toString())
-//        }
+        val packages = packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS or PackageManager.GET_SIGNATURES) // Add PackageManager.GET_SIGNATURES flag to retrieve signatures
+
         val database = ApkItemDatabase.getDatabase(context)
         Log.d("Apk Sentinel", "Retrieved Database Instance")
         val apkItemDao = database.apkItemDao()
@@ -121,8 +114,8 @@ class ApkSentinel : Application() {
 //            Log.d("Apk Sentinel", permissions.joinToString("\n"))
 
             val apkPath = packageInfo.applicationInfo.sourceDir
-            val hash = HashUtil.getSHA256HashOfFile(apkPath)
-
+            val appHash = HashUtil.getSHA256HashOfFile(apkPath)
+            val appCertHash = packageInfo.signatures[0].toCharsString()
 
             val apkItem = ApkItem(
                 appName,
@@ -134,7 +127,9 @@ class ApkSentinel : Application() {
                 lastUpdateDate,
                 permissions,
                 isSystemApp,
-                hash
+                appHash,
+                appCertHash,
+                false
             )
 //            apkList.add(
 //                apkItem
@@ -161,7 +156,9 @@ class ApkSentinel : Application() {
             lastUpdateDate,
             permissions,
             isSystemApp,
-            appHash
+            appHash,
+            appCertHash,
+            isDeleted
         ) = apkItem
         val base64Icon = DrawableUtil.convertDrawableToBase64String(appIcon)
 
@@ -176,7 +173,9 @@ class ApkSentinel : Application() {
                 lastUpdateDate = lastUpdateDate,
                 permissions = it.toList(),
                 isSystemApp = isSystemApp,
-                appHash = appHash
+                appHash = appHash,
+                appCertHash = appCertHash,
+                isDeleted = isDeleted
             )
         }
         //converting from model.ApkItem to database.entity.ApkItem

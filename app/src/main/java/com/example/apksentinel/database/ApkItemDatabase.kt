@@ -5,15 +5,18 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.apksentinel.database.dao.ApkChangeLogDao
 import com.example.apksentinel.database.dao.ApkItemDao
+import com.example.apksentinel.database.entities.ApkChangeLogEntity
 import com.example.apksentinel.database.entities.ApkItem
 import com.example.apksentinel.utils.DbTypeConverter
 
 
-@Database(entities = [ApkItem::class], version = 1, exportSchema = false)
+@Database(entities = [ApkItem::class, ApkChangeLogEntity::class], version = 2, exportSchema = false)
 @TypeConverters(DbTypeConverter::class)
 abstract class ApkItemDatabase : RoomDatabase() {
     abstract fun apkItemDao(): ApkItemDao
+    abstract fun apkChangeLogDao(): ApkChangeLogDao
 
     companion object {
         @Volatile
@@ -25,7 +28,7 @@ abstract class ApkItemDatabase : RoomDatabase() {
                     context.applicationContext,
                     ApkItemDatabase::class.java,
                     "apk_database"
-                ).build()
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }
