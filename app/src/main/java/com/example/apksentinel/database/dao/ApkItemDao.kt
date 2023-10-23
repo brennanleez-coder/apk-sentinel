@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.example.apksentinel.database.entities.ApkItem
 import com.example.apksentinel.model.AppPermissionCount
 import kotlinx.coroutines.flow.Flow
@@ -14,12 +15,19 @@ interface ApkItemDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(apkItem: ApkItem): Long
 
+    @Update
+    fun updateApkItem(apkItem: ApkItem)
+
     //when using coroutines, dont use suspend
     @Query("SELECT * FROM installed_apks")
     fun getAllApkItems(): Flow<List<ApkItem>>
 
     @Query("SELECT * FROM installed_apks WHERE id = :apkId")
     fun getApkItemById(apkId: Long): ApkItem
+
+    @Query("SELECT * FROM installed_apks WHERE packageName = :packageName")
+    fun getApkItemByPackageName(packageName: String): ApkItem?
+
 
     @Query("SELECT COUNT(*) FROM installed_apks")
     fun getCount(): Int

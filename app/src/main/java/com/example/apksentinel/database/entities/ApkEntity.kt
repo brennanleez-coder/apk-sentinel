@@ -19,5 +19,6 @@ data class ApkItem(
     val isSystemApp: Boolean,
     val appHash: String,
     val appCertHash: String,
-    val isDeleted: Boolean
+    var isDeleted: Boolean,
+    val timestamp: Long = System.currentTimeMillis()
 )

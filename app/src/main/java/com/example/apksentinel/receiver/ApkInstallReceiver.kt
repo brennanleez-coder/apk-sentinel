@@ -5,25 +5,51 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.example.apksentinel.database.ApkItemDatabase
+import com.example.apksentinel.database.dao.ApkItemDao
 import com.example.apksentinel.utils.HashUtil
 import com.example.apksentinel.utils.NotificationUtil
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 class ApkInstallReceiver : BroadcastReceiver() {
 
+    private lateinit var apkItemDao: ApkItemDao
+
     override fun onReceive(context: Context?, intent: Intent) {
         val packageName = intent.data?.encodedSchemeSpecificPart
-        Log.d("Apk Sentinel", "Receiver registered")
+
+
+        val database = ApkItemDatabase.getDatabase(context!!)
+        val apkItemDao = database.apkItemDao()
+
+        Log.d("Apk Sentinel", "Receiver registered. Package Name: $packageName, Intent: ${intent.action}")
 
         when(intent.action) {
             "android.intent.action.PACKAGE_ADDED" -> {
-                NotificationUtil.sendNotification(context!!, "New App Installed", "$packageName has been installed.")
+                NotificationUtil.sendNotification(context, "New App Installed", "$packageName has been installed.")
             }
             "android.intent.action.PACKAGE_REMOVED" -> {
                 NotificationUtil.sendNotification(context!!, "App Uninstalled", "$packageName has been uninstalled.")
+
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val apkItem = packageName?.let { apkItemDao.getApkItemByPackageName(it) }
+
+                        apkItem?.let {
+                            it.isDeleted = true
+                            apkItemDao.updateApkItem(it)
+                            Log.d("Apk Sentinel", "Apk Entity ID:${apkItem.id} isDeleted has been updated, to ${it.isDeleted}")
+                        }
+                    } catch (e: Exception) {
+                        Log.d("Apk Sentinel", "Error message: ${e.message}")
+                    }
+                }
             }
             "android.intent.action.PACKAGE_REPLACED" -> {
-                val apkPath = context!!.packageManager.getPackageInfo(packageName!!, 0).applicationInfo.sourceDir
+                val apkPath = context.packageManager.getPackageInfo(packageName!!, 0).applicationInfo.sourceDir
                 val newHash = HashUtil.getSHA256HashOfFile(apkPath)
 
                 if (!isHashSameForNewVersion(context, packageName, newHash)) {

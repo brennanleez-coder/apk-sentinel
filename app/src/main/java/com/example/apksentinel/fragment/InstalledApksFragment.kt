@@ -69,9 +69,9 @@ class InstalledApksFragment : Fragment() {
         recyclerView.visibility = View.GONE
 
         val database = ApkItemDatabase.getDatabase(this.requireContext())
-        Log.d("Apk Sentinel", "Retrieved Database Instance")
         val apkItemDao = database.apkItemDao()
-        Log.d("Apk Sentinel", "Retrieved Apk Item Dao")
+//        Log.d("Apk Sentinel", "Retrieved Database Instance")
+//        Log.d("Apk Sentinel", "Retrieved Apk Item Dao")
 
 
         coroutineScope.launch {
