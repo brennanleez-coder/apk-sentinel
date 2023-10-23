@@ -49,6 +49,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
                 }
             }
             "android.intent.action.PACKAGE_REPLACED" -> {
+                //If package replaced has a different signing cert as compared to the previous update, android will block installation by default
                 val apkPath = context.packageManager.getPackageInfo(packageName!!, 0).applicationInfo.sourceDir
                 val newHash = HashUtil.getSHA256HashOfFile(apkPath)
 
