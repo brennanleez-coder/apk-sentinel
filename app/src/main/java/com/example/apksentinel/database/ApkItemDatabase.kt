@@ -13,7 +13,7 @@ import com.example.apksentinel.utils.DbTypeConverter
 
 
 @Database(entities = [ApkItem::class, ApkChangeLogEntity::class], version = 4, exportSchema = false)
-@TypeConverters(DbTypeConverter::class)
+@TypeConverters(ListStringConverter::class)
 abstract class ApkItemDatabase : RoomDatabase() {
     abstract fun apkItemDao(): ApkItemDao
     abstract fun apkChangeLogDao(): ApkChangeLogDao

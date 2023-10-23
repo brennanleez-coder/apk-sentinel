@@ -16,6 +16,7 @@ import com.anychart.chart.common.listener.Event
 import com.anychart.chart.common.listener.ListenersInterface
 import com.anychart.enums.Align
 import com.anychart.enums.LegendLayout
+import com.example.apksentinel.ApkSentinel
 import com.example.apksentinel.R
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
@@ -40,7 +41,15 @@ class DashboardFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val app = activity?.application as? ApkSentinel
+        app?.isInitialized?.observe(viewLifecycleOwner) { initialized ->
+            if (initialized) {
+                initDashboard(view)
+            }
+        }
+    }
 
+    private fun initDashboard(view: View) {
 
         apkItemDao = ApkItemDatabase.getDatabase(this.requireContext()).apkItemDao()
         val pie = AnyChart.pie()
@@ -129,6 +138,7 @@ class DashboardFragment : Fragment() {
                 ).show()
             }
         })
+
     }
     companion object {
         fun newInstance(): DashboardFragment {

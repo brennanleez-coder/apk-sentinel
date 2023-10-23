@@ -8,6 +8,8 @@ import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
 import com.example.apksentinel.model.ApkItem
@@ -27,13 +29,16 @@ class ApkSentinel : Application() {
     val developerOptionsReceiver = DeveloperOptionsReceiver()
 
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
-    private val handler = Handler(Looper.getMainLooper())
-    private val notificationRunnable: Runnable = object : Runnable {
-        override fun run() {
-            NotificationUtil.sendNotification(this@ApkSentinel, "asd", "asd")
-            handler.postDelayed(this, 5000) // 5 seconds
-        }
-    }
+
+    private val _isInitialized = MutableLiveData(false)
+    val isInitialized: LiveData<Boolean> get() = _isInitialized
+//    private val handler = Handler(Looper.getMainLooper())
+//    private val notificationRunnable: Runnable = object : Runnable {
+//        override fun run() {
+//            NotificationUtil.sendNotification(this@ApkSentinel, "asd", "asd")
+//            handler.postDelayed(this, 5000) // 5 seconds
+//        }
+//    }
 
     override fun onCreate() {
         super.onCreate()
@@ -51,11 +56,17 @@ class ApkSentinel : Application() {
 
             coroutineScope.launch(Dispatchers.IO) {
                 val apkCount = apkItemDao.getCount()
+                var apkList: MutableList<ApkItem>
 
                 // If the database is not populated, get installed packages
                 if (apkCount <= 0) {
-                    getInstalledPackagesAsync(this@ApkSentinel, apkItemDao).await()
+                    apkList = getInstalledPackagesAsync(this@ApkSentinel, apkItemDao).await()
+                    apkList.map {
+                        insertIntoApkDatabase(apkItemDao, apkItem = it)
+                        Log.d("Apk Sentinel", it.toString())
+                    }
                 } else {
+                // Sync database with current phone state
                     val allApks = apkItemDao.getAllApkItems()
                     allApks.collect { list ->
                         Log.d("Apk Sentinel", list.size.toString() + " retrieved")
@@ -63,6 +74,8 @@ class ApkSentinel : Application() {
 
                     }
                 }
+                _isInitialized.postValue(true)
+
             }
         } catch (e: IllegalStateException) {
             if (e.message?.contains("Room cannot verify the data integrity") == true) {
@@ -92,11 +105,8 @@ class ApkSentinel : Application() {
         Dispatchers.IO) {
         val packageManager = context.packageManager
         val packages = packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS or PackageManager.GET_SIGNATURES) // Add PackageManager.GET_SIGNATURES flag to retrieve signatures
+        val apkList: MutableList<ApkItem> = mutableListOf()
 
-        val database = ApkItemDatabase.getDatabase(context)
-        Log.d("Apk Sentinel", "Retrieved Database Instance")
-        val apkItemDao = database.apkItemDao()
-        Log.d("Apk Sentinel", "Retrieved Apk Item Dao")
         for (packageInfo in packages) {
             val packageName = packageInfo.packageName
             val appName = packageManager.getApplicationLabel(packageInfo.applicationInfo).toString()
@@ -115,31 +125,31 @@ class ApkSentinel : Application() {
 
             val apkPath = packageInfo.applicationInfo.sourceDir
             val appHash = HashUtil.getSHA256HashOfFile(apkPath)
-            val appCertHash = packageInfo.signatures[0].toCharsString()
+            val appCertHash = packageInfo?.signatures?.get(0)?.toCharsString()
 
-            val apkItem = ApkItem(
-                appName,
-                packageName,
-                appIcon,
-                versionName,
-                versionCode,
-                installDate,
-                lastUpdateDate,
-                permissions,
-                isSystemApp,
-                appHash,
-                appCertHash,
-                false
-            )
-//            apkList.add(
-//                apkItem
-//            )
-            insertIntoApkDatabase(apkItemDao, apkItem)
-
+            val apkItem = appCertHash?.let {
+                ApkItem(
+                    appName,
+                    packageName,
+                    appIcon,
+                    versionName,
+                    versionCode,
+                    installDate,
+                    lastUpdateDate,
+                    permissions,
+                    isSystemApp,
+                    appHash,
+                    it,
+                    false
+                )
+            }
+            if (apkItem != null) {
+                apkList.add(apkItem)
+            }
 
         }
-//        apkList //important for coroutines
-        Log.d("Apk Sentinel", "Populated the database with installed packages.")
+        apkList //important for coroutines
+//        Log.d("Apk Sentinel", "Populated the database with installed packages.")
 
     }
     private fun insertIntoApkDatabase(apkItemDao: ApkItemDao, apkItem: ApkItem) {
@@ -175,7 +185,7 @@ class ApkSentinel : Application() {
                 isSystemApp = isSystemApp,
                 appHash = appHash,
                 appCertHash = appCertHash,
-                isDeleted = isDeleted
+                isDeleted = isDeleted,
             )
         }
         //converting from model.ApkItem to database.entity.ApkItem
