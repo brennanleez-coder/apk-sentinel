@@ -5,8 +5,6 @@ import android.content.Context
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -56,28 +54,45 @@ class ApkSentinel : Application() {
 
             coroutineScope.launch(Dispatchers.IO) {
                 val apkCount = apkItemDao.getCount()
-                var apkList: MutableList<ApkItem>
+                var localApkList: MutableList<ApkItem> = getInstalledPackagesAsync(this@ApkSentinel, apkItemDao).await()
 
                 // If the database is not populated, get installed packages
                 if (apkCount <= 0) {
-                    apkList = getInstalledPackagesAsync(this@ApkSentinel, apkItemDao).await()
-                    apkList.map {
+                    localApkList.map {
                         insertIntoApkDatabase(apkItemDao, apkItem = it)
                         Log.d("Apk Sentinel", it.toString())
                     }
                 } else {
                 // Sync database with current phone state
-                    val allApks = apkItemDao.getAllApkItems()
-                    allApks.collect { list ->
-                        Log.d("Apk Sentinel", list.size.toString() + " retrieved")
-                        NotificationUtil.sendNotification(this@ApkSentinel, "Apk Sentinel", "Dashboard Updated")
 
+
+                    val databaseApks = apkItemDao.getAllApkItems() //returns a Flow<List<ApkItem>>
+                    databaseApks.collect { databaseApkList ->
+                        //For each item in localApkList, check if there is not such app in database, this returns new apps
+                        val newApps = localApkList.filter { newItem ->
+                            databaseApkList.none { oldItem -> oldItem.packageName == newItem.packageName }
+                        }
+
+                        newApps.forEach {
+                            insertIntoApkDatabase(apkItemDao, apkItem = it)
+                            Log.d("Apk Sentinel", "New app found: ${it.packageName}")
+                        }
+                        val deletedApps = databaseApkList.filter { oldItem ->
+                            localApkList.none { newItem -> newItem.packageName == oldItem.packageName}
+                        }.forEach {
+                            //update item in database to be isDeleted = true
+//                            apkItemDao.update(it)
+                        }
+
+//                        Log.d("Apk Sentinel", list.size.toString() + " retrieved")
+                        NotificationUtil.sendNotification(this@ApkSentinel, "Apk Sentinel", "Database synced")
                     }
                 }
                 _isInitialized.postValue(true)
-
             }
         } catch (e: IllegalStateException) {
+            _isInitialized.postValue(false)
+
             if (e.message?.contains("Room cannot verify the data integrity") == true) {
                 Log.e("RoomError", "Schema has changed without an update in version number!")
             } else {
