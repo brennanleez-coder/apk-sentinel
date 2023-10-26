@@ -139,6 +139,7 @@ class ApkSentinel : Application() {
 //            Log.d("Apk Sentinel", permissions.joinToString("\n"))
 
             val apkPath = packageInfo.applicationInfo.sourceDir
+            Log.d("Check Path", "$packageName: $apkPath")
             val appHash = HashUtil.getSHA256HashOfFile(apkPath)
             val appCertHash = packageInfo?.signatures?.get(0)?.toCharsString()
 

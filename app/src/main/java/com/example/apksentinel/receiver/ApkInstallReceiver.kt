@@ -27,10 +27,11 @@ class ApkInstallReceiver : BroadcastReceiver() {
         Log.d("Apk Sentinel", "Receiver registered. Package Name: $packageName, Intent: ${intent.action}")
 
         when(intent.action) {
-            "android.intent.action.PACKAGE_ADDED" -> {
+            "android.intent.action.PACKAGE_ADDED" -> { //listen to app installation (fresh installation or reinstallation)
+                //check for reinstallation
                 NotificationUtil.sendNotification(context, "New App Installed", "$packageName has been installed.")
             }
-            "android.intent.action.PACKAGE_REMOVED" -> {
+            "android.intent.action.PACKAGE_REMOVED" -> { //listen to app updates
                 NotificationUtil.sendNotification(context!!, "App Uninstalled", "$packageName has been uninstalled.")
 
 
@@ -49,7 +50,10 @@ class ApkInstallReceiver : BroadcastReceiver() {
                 }
             }
             "android.intent.action.PACKAGE_REPLACED" -> {
-                //If package replaced has a different signing cert as compared to the previous update, android will block installation by default
+                /*If package replaced has a different signing cert as compared to the previous update,
+                * android will block installation by default
+                * No action needed
+                */
                 val apkPath = context.packageManager.getPackageInfo(packageName!!, 0).applicationInfo.sourceDir
                 val newHash = HashUtil.getSHA256HashOfFile(apkPath)
 
