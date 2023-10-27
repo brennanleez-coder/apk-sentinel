@@ -1,5 +1,6 @@
 package com.example.apksentinel.fragment
 
+import android.database.sqlite.SQLiteException
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -41,13 +42,15 @@ class DashboardFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        //Observe for isInitialised before loading dashboard
         val app = activity?.application as? ApkSentinel
-//        app?.isInitialized?.observe(viewLifecycleOwner) { initialized ->
-//            if (initialized) {
-//                initDashboard(view)
-//            }
-//        }
-        initDashboard(view)
+        app?.isInitialized?.observe(viewLifecycleOwner) { initialized ->
+            if (initialized) {
+                initDashboard(view)
+            }
+        }
+//        initDashboard(view)
 
     }
 
@@ -123,9 +126,24 @@ class DashboardFragment : Fragment() {
 
                 }
 
-            } catch (exception: Exception)
-            {
-                Log.d("Apk Sentinel", "Failed to retrieve data ${exception.message}" )
+            } catch (databaseError: SQLiteException) { // Replace with a specific exception if you have one
+                Log.e("Apk Sentinel", "Database error occurred", databaseError)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        context,
+                        "An error occurred while fetching data. Please try again later.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (exception: Exception) {
+                Log.e("Apk Sentinel", "Failed to retrieve data", exception)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        context,
+                        "An unexpected error occurred. Please try again.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
 
         }

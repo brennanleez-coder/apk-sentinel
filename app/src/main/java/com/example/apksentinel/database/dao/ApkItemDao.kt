@@ -45,8 +45,5 @@ interface ApkItemDao {
     @Query("SELECT appHash FROM installed_apks WHERE packageName = :packageName LIMIT 1")
     fun getHashForApp(packageName: String): String?
 
-    @Query("SELECT permissions FROM installed_apks WHERE packageName = :packageName LIMIT 1")
-    fun getPermissionsForApp(packageName: String): String?
-
 
 }

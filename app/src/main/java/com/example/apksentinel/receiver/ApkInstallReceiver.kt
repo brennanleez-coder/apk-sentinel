@@ -24,11 +24,11 @@ class ApkInstallReceiver : BroadcastReceiver() {
         val database = ApkItemDatabase.getDatabase(context!!)
         val apkItemDao = database.apkItemDao()
 
-        Log.d("Apk Sentinel", "Receiver registered. Package Name: $packageName, Intent: ${intent.action}")
 
         when(intent.action) {
             "android.intent.action.PACKAGE_ADDED" -> { //listen to app installation (fresh installation or reinstallation)
-                //check for reinstallation
+                //Perform actions for reinstallation
+
                 NotificationUtil.sendNotification(context, "New App Installed", "$packageName has been installed.")
             }
             "android.intent.action.PACKAGE_REMOVED" -> { //listen to app updates

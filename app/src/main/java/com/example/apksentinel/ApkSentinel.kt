@@ -18,6 +18,7 @@ import com.example.apksentinel.utils.HashUtil
 import com.example.apksentinel.utils.NotificationUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
@@ -40,6 +41,9 @@ class ApkSentinel : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        _isInitialized.value = false
+
         NotificationUtil.createNotificationChannel(this)
 //        NotificationUtil.sendNotification(this@ApkSentinel, "Test", "Test")
 //        handler.post(notificationRunnable)
@@ -52,47 +56,59 @@ class ApkSentinel : Application() {
             val database = ApkItemDatabase.getDatabase(this)
             val apkItemDao = database.apkItemDao()
 
-            coroutineScope.launch(Dispatchers.IO) {
-                val apkCount = apkItemDao.getCount()
-                var localApkList: MutableList<ApkItem> = getInstalledPackagesAsync(this@ApkSentinel, apkItemDao).await()
+            val dbScope = CoroutineScope(Dispatchers.IO + SupervisorJob()) //supervisor job to ensure other child coroutines doesnt fail when one does
+            dbScope.launch {
+                try {
+                    val apkCount = apkItemDao.getCount()
+                    var localApkList: MutableList<ApkItem> = getInstalledPackagesAsync(this@ApkSentinel, apkItemDao).await()
 
-                // If the database is not populated, get installed packages
-                if (apkCount <= 0) {
-                    localApkList.map {
-                        insertIntoApkDatabase(apkItemDao, apkItem = it)
-                        Log.d("Apk Sentinel", it.toString())
-                    }
-                } else {
-                // Sync database with current phone state
-
-
-                    val databaseApks = apkItemDao.getAllApkItems() //returns a Flow<List<ApkItem>>
-                    databaseApks.collect { databaseApkList ->
-                        //For each item in localApkList, check if there is not such app in database, this returns new apps
-                        val newApps = localApkList.filter { newItem ->
-                            databaseApkList.none { oldItem -> oldItem.packageName == newItem.packageName }
-                        }
-
-                        newApps.forEach {
+                    // If the database is not populated, get installed packages
+                    if (apkCount <= 0) {
+                        localApkList.map {
                             insertIntoApkDatabase(apkItemDao, apkItem = it)
-                            Log.d("Apk Sentinel", "New app found: ${it.packageName}")
+
                         }
-                        val deletedApps = databaseApkList.filter { oldItem ->
-                            localApkList.none { newItem -> newItem.packageName == oldItem.packageName}
-                        }.forEach {
-                            //update item in database to be isDeleted = true
-//                            apkItemDao.update(it)
-                        }
+                        _isInitialized.postValue(true)
+                        NotificationUtil.sendNotification(this@ApkSentinel, "Apk Sentinel", "Database populated")
+                    } else {
+                        // Sync database with current phone state
+                        val databaseApks = apkItemDao.getAllApkItems() //returns a Flow<List<ApkItem>>
+                        databaseApks.collect { databaseApkList ->
+                            //For each item in localApkList, check if there is not such app in database, this returns new apps
+                            // LOGIC ERROR
+                            val newApps = localApkList.filter { newItem ->
+                                databaseApkList.none { oldItem -> oldItem.packageName == newItem.packageName }
+                            }
+                            newApps.forEach {
+                                insertIntoApkDatabase(apkItemDao, apkItem = it)
+//                            Log.d("Apk Sentinel", "New app found: ${it.packageName}")
+                            }
+                            //for each item in databaseApkList, check if there is no such app in local phone state, this returns deleted apps
+                            val deletedApps = databaseApkList.filter { oldItem ->
+                                localApkList.none { newItem -> newItem.packageName == oldItem.packageName}
+                            }
+
+                            deletedApps.forEach {
+                                //update item in database to be isDeleted = true
+//                            Log.d("Apk Sentinel", "app deleted: ${it.packageName}")
+                                it.isDeleted = true
+                                apkItemDao.updateApkItem(it)
+                            }
 
 //                        Log.d("Apk Sentinel", list.size.toString() + " retrieved")
-                        NotificationUtil.sendNotification(this@ApkSentinel, "Apk Sentinel", "Database synced")
+                            NotificationUtil.sendNotification(this@ApkSentinel, "Apk Sentinel", "Database synced")
+                            _isInitialized.postValue(true)
+
+                        }
+
                     }
+                } catch (e: Exception) {
+                    _isInitialized.postValue(false)
+                    Log.e("ApkSentinelInit", "Exception during database operations", e)
                 }
-                _isInitialized.postValue(true)
             }
         } catch (e: IllegalStateException) {
             _isInitialized.postValue(false)
-
             if (e.message?.contains("Room cannot verify the data integrity") == true) {
                 Log.e("RoomError", "Schema has changed without an update in version number!")
             } else {
