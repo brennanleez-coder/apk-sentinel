@@ -1,0 +1,89 @@
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:minHeight="100dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="5dp"
+    app:cardBackgroundColor="#FAFAFA">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Package Name TextView -->
+        <TextView
+            android:id="@+id/packageNameTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#4A4A4A"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:gravity="start" />
+
+        <!-- Old App Certificate Hash TextView -->
+        <TextView
+            android:id="@+id/oldAppCertHashTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="#777777"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/packageNameTextView"
+            android:layout_marginTop="8dp"
+            android:gravity="start" />
+
+        <!-- New App Certificate Hash TextView -->
+        <TextView
+            android:id="@+id/newAppCertHashTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="#777777"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/oldAppCertHashTextView"
+            android:layout_marginTop="8dp"
+            android:gravity="start" />
+
+        <!-- Permissions Added TextView -->
+        <TextView
+            android:id="@+id/permissionsAddedTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="#4CAF50"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/newAppCertHashTextView"
+            android:layout_marginTop="8dp"
+            android:gravity="start" />
+
+        <!-- Permissions Removed TextView -->
+        <TextView
+            android:id="@+id/permissionsRemovedTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="#F44336"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/permissionsAddedTextView"
+            android:layout_marginTop="8dp"
+            android:gravity="start" />
+
+        <!-- Timestamp TextView -->
+        <TextView
+            android:id="@+id/timestampTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="#999999"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/permissionsRemovedTextView"
+            android:layout_marginTop="8dp"
+            android:gravity="start" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

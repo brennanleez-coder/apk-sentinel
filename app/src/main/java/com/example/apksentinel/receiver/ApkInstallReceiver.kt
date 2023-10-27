@@ -54,14 +54,15 @@ class ApkInstallReceiver : BroadcastReceiver() {
                 * android will block installation by default
                 * No action needed
                 */
-                val apkPath = context.packageManager.getPackageInfo(packageName!!, 0).applicationInfo.sourceDir
-                val newHash = HashUtil.getSHA256HashOfFile(apkPath)
 
-                if (!isHashSameForNewVersion(context, packageName, newHash)) {
-                    NotificationUtil.sendNotification(context, "App Updated", "$packageName has been updated and the APK hash has changed.")
-                } else {
-                    NotificationUtil.sendNotification(context, "App Updated", "$packageName has been updated but the APK hash remains the same.")
-                }
+
+//                val apkPath = context.packageManager.getPackageInfo(packageName!!, 0).applicationInfo.sourceDir
+//                val newHash = HashUtil.getSHA256HashOfFile(apkPath)
+//                if (!isHashSameForNewVersion(context, packageName, newHash)) {
+//                    NotificationUtil.sendNotification(context, "App Updated", "$packageName has been updated and the APK hash has changed.")
+//                } else {
+//                    NotificationUtil.sendNotification(context, "App Updated", "$packageName has been updated but the APK hash remains the same.")
+//                }
             }
             "android.intent.action.QUERY_PACKAGE_RESTART" -> {
                 Log.i("Apk Sentinel", "$packageName will be restarted.")

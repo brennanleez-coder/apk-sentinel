@@ -32,10 +32,10 @@ interface ApkItemDao {
     @Query("SELECT COUNT(*) FROM installed_apks")
     fun getCount(): Int
 
-    @Query("SELECT COUNT(*) FROM installed_apks WHERE isSystemApp = 1")
+    @Query("SELECT COUNT(*) FROM installed_apks WHERE isSystemApp = 1 AND isDeleted = 0")
     fun countSystemApps(): Int
 
-    @Query("SELECT COUNT(*) FROM installed_apks WHERE isSystemApp = 0")
+    @Query("SELECT COUNT(*) FROM installed_apks WHERE isSystemApp = 0 AND isDeleted = 0")
     fun countNonSystemApps(): Int
 
     @Query("SELECT appName, LENGTH(permissions) - LENGTH(REPLACE(permissions, ',', '')) + 1 as permissionsCount FROM installed_apks ORDER BY permissionsCount DESC")

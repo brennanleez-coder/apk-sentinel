@@ -36,8 +36,9 @@ class MainActivity : AppCompatActivity() {
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             when (position) {
                 0 -> tab.text = "Dashboard"
-                1 -> tab.text = "Developer Options"
-                2 -> tab.text = "Installed APK"
+                1 -> tab.text = "Dev Options"
+                2 -> tab.text = "Change Log"
+                3 -> tab.text = "Apk Info"
             }
         }.attach()
 

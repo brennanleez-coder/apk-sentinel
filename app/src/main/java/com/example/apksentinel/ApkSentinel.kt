@@ -43,6 +43,7 @@ class ApkSentinel : Application() {
         super.onCreate()
 
         _isInitialized.value = false
+//        _isInitialized.observeForever()
 
         NotificationUtil.createNotificationChannel(this)
 //        NotificationUtil.sendNotification(this@ApkSentinel, "Test", "Test")
@@ -96,10 +97,10 @@ class ApkSentinel : Application() {
                             }
 
 //                        Log.d("Apk Sentinel", list.size.toString() + " retrieved")
-                            NotificationUtil.sendNotification(this@ApkSentinel, "Apk Sentinel", "Database synced")
-                            _isInitialized.postValue(true)
 
+                            _isInitialized.postValue(true)
                         }
+                            NotificationUtil.sendNotification(this@ApkSentinel, "Apk Sentinel", "Database synced")
 
                     }
                 } catch (e: Exception) {
@@ -155,7 +156,7 @@ class ApkSentinel : Application() {
 //            Log.d("Apk Sentinel", permissions.joinToString("\n"))
 
             val apkPath = packageInfo.applicationInfo.sourceDir
-            Log.d("Check Path", "$packageName: $apkPath")
+//            Log.d("Check Path", "$packageName: $apkPath")
             val appHash = HashUtil.getSHA256HashOfFile(apkPath)
             val appCertHash = packageInfo?.signatures?.get(0)?.toCharsString()
 

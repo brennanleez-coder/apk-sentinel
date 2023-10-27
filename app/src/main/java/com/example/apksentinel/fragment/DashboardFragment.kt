@@ -21,6 +21,7 @@ import com.example.apksentinel.ApkSentinel
 import com.example.apksentinel.R
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
+import com.example.apksentinel.model.AppPermissionCount
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,16 +43,15 @@ class DashboardFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        Log.d("Dashboard", "intialised")
         //Observe for isInitialised before loading dashboard
-        val app = activity?.application as? ApkSentinel
-        app?.isInitialized?.observe(viewLifecycleOwner) { initialized ->
-            if (initialized) {
-                initDashboard(view)
-            }
-        }
-//        initDashboard(view)
-
+//        val app = activity?.application as? ApkSentinel
+//        app?.isInitialized?.observe(viewLifecycleOwner) { initialized ->
+//            if (initialized) {
+//                initDashboard(view)
+//            }
+//        }
+        initDashboard(view)
     }
 
     private fun initDashboard(view: View) {
@@ -79,7 +79,7 @@ class DashboardFragment : Fragment() {
                     data.add(ValueDataEntry("Non-System Apps", nonSystemAppsCount))
                     pie.data(data)
 
-                    pie.title("Distribution of Applications")
+                    pie.title("Distribution of Installed Applications")
                     pie.labels().position("outside")
                     pie.legend()
                         .position("center")
@@ -89,40 +89,7 @@ class DashboardFragment : Fragment() {
                     pieChartView.setChart(pie)
 
 //                   Uncomment this chunk to show Bar Chart
-//                    val barChartView: AnyChartView = view.findViewById(R.id.bar_chart)
-//                    APIlib.getInstance().setActiveAnyChartView(barChartView);
-//
-//
-//                    val cartesian: Cartesian = AnyChart.column()
-//                    val barChartData: MutableList<DataEntry> = ArrayList()
-//                    for (app in appsByPermissionCount) {
-//                        barChartData.add(ValueDataEntry(app.appName, app.permissionsCount))
-//                    }
-//
-//                    val column: Column = cartesian.column(barChartData)
-//
-//                    column.tooltip()
-//                        .titleFormat("{%X}")
-//                        .position(Position.CENTER_BOTTOM)
-//                        .anchor(Anchor.CENTER_BOTTOM)
-//                        .offsetX(0.0)
-//                        .offsetY(5.0)
-//                        .format("\${%Value}{groupsSeparator: }")
-//
-//                    cartesian.animation(true)
-//                    cartesian.title("Most permissions used")
-//
-//                    cartesian.yScale().minimum(0.0)
-//
-//                    cartesian.yAxis(0).labels().format("\${%Value}{groupsSeparator: }")
-//
-//                    cartesian.tooltip().positionMode(TooltipPositionMode.POINT)
-//                    cartesian.interactivity().hoverMode(HoverMode.BY_X)
-//
-//                    cartesian.xAxis(0).title("Product")
-//                    cartesian.yAxis(0).title("Revenue")
-//
-//                    barChartView.setChart(cartesian)
+//                    renderBarChart(view, appsByPermissionCount)
 
                 }
 
@@ -160,6 +127,49 @@ class DashboardFragment : Fragment() {
         })
 
     }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        val app = activity?.application as? ApkSentinel
+        app?.isInitialized?.removeObservers(viewLifecycleOwner)
+    }
+    private fun renderBarChart(view: View, appsByPermissionCount: List<AppPermissionCount>
+    ) {
+//        val barChartView: AnyChartView = view.findViewById(R.id.bar_chart)
+//        APIlib.getInstance().setActiveAnyChartView(barChartView);
+//
+//
+//        val cartesian: Cartesian = AnyChart.column()
+//        val barChartData: MutableList<DataEntry> = ArrayList()
+//        for (app in appsByPermissionCount) {
+//            barChartData.add(ValueDataEntry(app.appName, app.permissionsCount))
+//        }
+//
+//        val column: Column = cartesian.column(barChartData)
+//
+//        column.tooltip()
+//            .titleFormat("{%X}")
+//            .position(Position.CENTER_BOTTOM)
+//            .anchor(Anchor.CENTER_BOTTOM)
+//            .offsetX(0.0)
+//            .offsetY(5.0)
+//            .format("\${%Value}{groupsSeparator: }")
+//
+//        cartesian.animation(true)
+//        cartesian.title("Most permissions used")
+//
+//        cartesian.yScale().minimum(0.0)
+//
+//        cartesian.yAxis(0).labels().format("\${%Value}{groupsSeparator: }")
+//
+//        cartesian.tooltip().positionMode(TooltipPositionMode.POINT)
+//        cartesian.interactivity().hoverMode(HoverMode.BY_X)
+//
+//        cartesian.xAxis(0).title("Product")
+//        cartesian.yAxis(0).title("Revenue")
+//
+//        barChartView.setChart(cartesian)
+    }
+
     companion object {
         fun newInstance(): DashboardFragment {
             return DashboardFragment()

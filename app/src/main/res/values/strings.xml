@@ -7,5 +7,7 @@
     <string name="entry_number_format">%d.</string>
     <string name="app_name_format">AppName: %s</string>
     <string name="package_name_format">PackageName: %s</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>
