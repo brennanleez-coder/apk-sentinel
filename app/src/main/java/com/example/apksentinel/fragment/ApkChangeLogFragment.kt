@@ -11,15 +11,13 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.apksentinel.R
+import com.example.apksentinel.adapter.ApkChangeLogAdapter
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.entities.ApkChangeLogEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 //import kotlinx.android.synthetic.main.fragment_apk_change_log.*
 
@@ -113,54 +111,7 @@ class ApkChangeLogFragment : Fragment() {
 //        coroutineScope.cancel()
     }
 
-    private class ApkChangeLogAdapter(private var logs: List<ApkChangeLogEntity>) : RecyclerView.Adapter<ApkChangeLogAdapter.ViewHolder>() {
 
-        class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            val packageNameTextView: TextView = itemView.findViewById(R.id.packageNameTextView)
-            val oldAppCertHashTextView: TextView = itemView.findViewById(R.id.oldAppCertHashTextView)
-            val newAppCertHashTextView: TextView = itemView.findViewById(R.id.newAppCertHashTextView)
-            val permissionsAddedTextView: TextView = itemView.findViewById(R.id.permissionsAddedTextView)
-            val permissionsRemovedTextView: TextView = itemView.findViewById(R.id.permissionsRemovedTextView)
-            val timestampTextView: TextView = itemView.findViewById(R.id.timestampTextView)
-        }
-
-        fun updateData(newLogs: List<ApkChangeLogEntity>) {
-            logs = newLogs
-            notifyDataSetChanged()
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.apk_change_log_item_layout, parent, false)
-            return ViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val log = logs[position]
-
-            holder.packageNameTextView.text = log.packageName
-            holder.oldAppCertHashTextView.text = "Old Cert Hash: ${log.oldAppCertHash ?: "N/A"}"
-            holder.newAppCertHashTextView.text = "New Cert Hash: ${log.newAppCertHash ?: "N/A"}"
-
-            if (log.permissionsAdded != null && log.permissionsAdded.isNotEmpty()) {
-                holder.permissionsAddedTextView.text = "Permissions Added: ${log.permissionsAdded.joinToString(", ")}"
-            } else {
-                holder.permissionsAddedTextView.text = "No Permissions Added"
-            }
-
-            if (log.permissionsRemoved != null && log.permissionsRemoved.isNotEmpty()) {
-                holder.permissionsRemovedTextView.text = "Permissions Removed: ${log.permissionsRemoved.joinToString(", ")}"
-            } else {
-                holder.permissionsRemovedTextView.text = "No Permissions Removed"
-            }
-
-            val formattedDate = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(
-                Date(log.timestamp)
-            )
-            holder.timestampTextView.text = formattedDate
-        }
-
-        override fun getItemCount() = logs.size
-    }
 
 
     companion object {
