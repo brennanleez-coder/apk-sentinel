@@ -16,6 +16,7 @@ import com.example.apksentinel.database.entities.ApkChangeLogEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -24,7 +25,7 @@ import java.util.Locale
 
 class ApkChangeLogFragment : Fragment() {
 
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var changeLogAdapter: ApkChangeLogAdapter
@@ -47,10 +48,29 @@ class ApkChangeLogFragment : Fragment() {
 
 
         recyclerView.layoutManager = LinearLayoutManager(context)
+        val mockLogs = listOf(
+            ApkChangeLogEntity(
+                packageName = "com.example.mockapp1",
+                oldAppCertHash = "oldHash1",
+                newAppCertHash = "newHash1",
+                permissionsAdded = listOf("CAMERA", "MICROPHONE"),
+                permissionsRemoved = listOf(),
+                timestamp = System.currentTimeMillis()
+            ),
+            ApkChangeLogEntity(
+                packageName = "com.example.mockapp2",
+                oldAppCertHash = "oldHash2",
+                newAppCertHash = "newHash2",
+                permissionsAdded = listOf(),
+                permissionsRemoved = listOf("LOCATION"),
+                timestamp = System.currentTimeMillis()
+            )
+            // Add more mock logs as required...
+        )
         changeLogAdapter = ApkChangeLogAdapter(emptyList())
         recyclerView.adapter = changeLogAdapter
 
-//        loaderProgressBar.visibility = View.VISIBLE
+        loaderProgressBar.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
 
         val database = ApkItemDatabase.getDatabase(this.requireContext())
@@ -59,23 +79,33 @@ class ApkChangeLogFragment : Fragment() {
         coroutineScope.launch {
             try {
                 val logs = changeLogDao.getAll()
-                if (logs.isEmpty()) {
-                    // Show the empty state message and hide the RecyclerView
-                    tvEmptyState.visibility = View.VISIBLE
-                    recyclerView.visibility = View.GONE
-                    loaderProgressBar.visibility = View.GONE
-                } else {
-                    changeLogAdapter.updateData(logs)
-                    tvChangeLogCount.text = "Total Logs: ${logs.size}"
-                    loaderProgressBar.visibility = View.GONE
-                    recyclerView.visibility = View.VISIBLE
-                    tvEmptyState.visibility = View.GONE
+
+                withContext(Dispatchers.Main) {
+                    if (logs.isEmpty()) {
+                        // If real logs are empty, update the adapter with mock data
+                        changeLogAdapter.updateData(mockLogs)
+                        tvChangeLogCount.text = "Total Logs: ${mockLogs.size}"
+                        tvEmptyState.visibility = View.GONE
+                        recyclerView.visibility = View.VISIBLE
+                        loaderProgressBar.visibility = View.GONE
+                    } else {
+                        // If real logs are present, show the real logs
+                        changeLogAdapter.updateData(logs)
+                        tvChangeLogCount.text = "Total Logs: ${logs.size}"
+                        tvEmptyState.visibility = View.GONE
+                        recyclerView.visibility = View.VISIBLE
+                        loaderProgressBar.visibility = View.GONE
+                    }
                 }
+
             } catch (e: Exception) {
-                Log.e("DatabaseError", "Error retrieving change logs from database: ${e.message}")
-                loaderProgressBar.visibility = View.GONE
+                withContext(Dispatchers.Main) {
+                    Log.e("DatabaseError", "Error retrieving change logs from database: ${e.message}")
+                    loaderProgressBar.visibility = View.GONE
+                }
             }
         }
+
     }
 
     override fun onDestroy() {

@@ -82,16 +82,16 @@ class InstalledApksFragment : Fragment() {
                     apkListAdapter.updateData(allAppsList)
                     tvApkCount.text = allAppsList.size.toString()
 
-                    // Delay needed to ensure the list is loaded before starting the animation
-                    recyclerView.postDelayed({
-                        // Scroll down by a set amount (e.g., 50 pixels) to show scroll animation
-                        recyclerView.smoothScrollBy(0, 100)
-
-                        // After a short delay, scroll back up
-                        recyclerView.postDelayed({
-                            recyclerView.smoothScrollBy(0, -100)
-                        }, 500) // delay for scrolling back up
-                    }, 500) // initial delay for scrolling down
+//                    // Delay needed to ensure the list is loaded before starting the animation
+//                    recyclerView.postDelayed({
+//                        // Scroll down by a set amount (e.g., 50 pixels) to show scroll animation
+//                        recyclerView.smoothScrollBy(0, 100)
+//
+//                        // After a short delay, scroll back up
+//                        recyclerView.postDelayed({
+//                            recyclerView.smoothScrollBy(0, -100)
+//                        }, 500) // delay for scrolling back up
+//                    }, 500) // initial delay for scrolling down
 
                     loaderProgressBar.visibility = View.GONE
                     recyclerView.visibility = View.VISIBLE

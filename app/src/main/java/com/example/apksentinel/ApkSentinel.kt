@@ -18,7 +18,6 @@ import com.example.apksentinel.utils.HashUtil
 import com.example.apksentinel.utils.NotificationUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
@@ -27,7 +26,7 @@ class ApkSentinel : Application() {
     val apkInstallReceiver = ApkInstallReceiver()
     val developerOptionsReceiver = DeveloperOptionsReceiver()
 
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private val _isInitialized = MutableLiveData(false)
     val isInitialized: LiveData<Boolean> get() = _isInitialized
@@ -57,7 +56,7 @@ class ApkSentinel : Application() {
             val database = ApkItemDatabase.getDatabase(this)
             val apkItemDao = database.apkItemDao()
 
-            val dbScope = CoroutineScope(Dispatchers.IO + SupervisorJob()) //supervisor job to ensure other child coroutines doesnt fail when one does
+            val dbScope = CoroutineScope(Dispatchers.IO )
             dbScope.launch {
                 try {
                     val apkCount = apkItemDao.getCount()
