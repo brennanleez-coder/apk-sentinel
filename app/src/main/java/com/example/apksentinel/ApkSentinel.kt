@@ -56,7 +56,7 @@ class ApkSentinel : Application() {
             val database = ApkItemDatabase.getDatabase(this)
             val apkItemDao = database.apkItemDao()
 
-            val dbScope = CoroutineScope(Dispatchers.IO )
+            val dbScope = CoroutineScope(Dispatchers.IO)
             dbScope.launch {
                 try {
                     val apkCount = apkItemDao.getCount()
