@@ -24,6 +24,7 @@ import com.example.apksentinel.database.dao.ApkItemDao
 import com.example.apksentinel.model.AppPermissionCount
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -56,75 +57,83 @@ class DashboardFragment : Fragment() {
 
     private fun initDashboard(view: View) {
 
-        apkItemDao = ApkItemDatabase.getDatabase(this.requireContext()).apkItemDao()
-        val pie = AnyChart.pie()
-        val pieChartView: AnyChartView = view.findViewById(R.id.pie_chart)
-        APIlib.getInstance().setActiveAnyChartView(pieChartView);
+        try {
 
-        pieChartView.setProgressBar(view.findViewById(R.id.progress_bar))
+            apkItemDao = ApkItemDatabase.getDatabase(this.requireContext()).apkItemDao()
+            val pie = AnyChart.pie()
+            val pieChartView: AnyChartView = view.findViewById(R.id.pie_chart)
+            APIlib.getInstance().setActiveAnyChartView(pieChartView);
+
+            pieChartView.setProgressBar(view.findViewById(R.id.progress_bar))
 
 
-        coroutineScope.launch {
-            try {
-                val systemAppsCount = apkItemDao.countSystemApps()
-                val nonSystemAppsCount = apkItemDao.countNonSystemApps()
-                val appsByPermissionCount = apkItemDao.getAppsByPermissionCount()
-//                Log.d("Apk Sentinel", systemAppsCount.toString())
-//                Log.d("Apk Sentinel", nonSystemAppsCount.toString())
-//                Log.d("Apk Sentinel", appsByPermissionCount.toString())
+            coroutineScope.launch {
+                try {
+                    val systemAppsCount = apkItemDao.countSystemApps()
+                    val nonSystemAppsCount = apkItemDao.countNonSystemApps()
+                    val appsByPermissionCount = apkItemDao.getAppsByPermissionCount()
+    //                Log.d("Apk Sentinel", systemAppsCount.toString())
+    //                Log.d("Apk Sentinel", nonSystemAppsCount.toString())
+    //                Log.d("Apk Sentinel", appsByPermissionCount.toString())
 
-                withContext(Dispatchers.Main) {
-                    val data: MutableList<DataEntry> = ArrayList()
-                    data.add(ValueDataEntry("System Apps", systemAppsCount))
-                    data.add(ValueDataEntry("Non-System Apps", nonSystemAppsCount))
-                    pie.data(data)
+                    withContext(Dispatchers.Main) {
+                        val data: MutableList<DataEntry> = ArrayList()
+                        data.add(ValueDataEntry("System Apps", systemAppsCount))
+                        data.add(ValueDataEntry("Non-System Apps", nonSystemAppsCount))
+                        pie.data(data)
 
-                    pie.title("Distribution of Installed Applications")
-                    pie.labels().position("outside")
-                    pie.legend()
-                        .position("center")
-                        .itemsLayout(LegendLayout.HORIZONTAL)
-                        .align(Align.CENTER)
+                        pie.title("Distribution of Installed Applications")
+                        pie.labels().position("outside")
+                        pie.legend()
+                            .position("center")
+                            .itemsLayout(LegendLayout.HORIZONTAL)
+                            .align(Align.CENTER)
 
-                    pieChartView.setChart(pie)
+                        pieChartView.setChart(pie)
 
-//                   Uncomment this chunk to show Bar Chart
-//                    renderBarChart(view, appsByPermissionCount)
+    //                   Uncomment this chunk to show Bar Chart
+    //                    renderBarChart(view, appsByPermissionCount)
 
+                    }
+
+                } catch (databaseError: SQLiteException) { // Replace with a specific exception if you have one
+                    Log.e("Apk Sentinel", "Database error occurred", databaseError)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            context,
+                            "An error occurred while fetching data. Please try again later.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } catch (exception: Exception) {
+                    Log.e("Apk Sentinel", "Failed to retrieve data", exception)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            context,
+                            "An unexpected error occurred. Please try again.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
 
-            } catch (databaseError: SQLiteException) { // Replace with a specific exception if you have one
-                Log.e("Apk Sentinel", "Database error occurred", databaseError)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        context,
-                        "An error occurred while fetching data. Please try again later.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            } catch (exception: Exception) {
-                Log.e("Apk Sentinel", "Failed to retrieve data", exception)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        context,
-                        "An unexpected error occurred. Please try again.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
             }
 
+            pie.setOnClickListener(object :
+                ListenersInterface.OnClickListener(arrayOf("x", "value")) {
+                override fun onClick(event: Event) {
+                    if (isAdded) { // Check if the fragment is still added
+                        Toast.makeText(
+                            context,
+                            event.data["x"] + ":" + event.data["value"],
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            })
+        } catch (e: Exception) {
+            Log.e("Apk Sentinel", e.printStackTrace().toString())
         }
 
-        pie.setOnClickListener(object :
-            ListenersInterface.OnClickListener(arrayOf<String>("x", "value")) {
-            override fun onClick(event: Event) {
-                Toast.makeText(
-                    context,
-                    event.data["x"] + ":" + event.data["value"],
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        })
 
     }
     override fun onDestroyView() {
@@ -132,6 +141,7 @@ class DashboardFragment : Fragment() {
         val app = activity?.application as? ApkSentinel
         app?.isInitialized?.removeObservers(viewLifecycleOwner)
     }
+
     private fun renderBarChart(view: View, appsByPermissionCount: List<AppPermissionCount>
     ) {
 //        val barChartView: AnyChartView = view.findViewById(R.id.bar_chart)
