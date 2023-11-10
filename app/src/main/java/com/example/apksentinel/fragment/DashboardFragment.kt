@@ -55,7 +55,7 @@ class DashboardFragment : Fragment() {
 
             val viewModelFactory = DashboardViewModelFactory(application, repository)
             viewModel = ViewModelProvider(this, viewModelFactory).get(DashboardViewModel::class.java)
-            val isInitialised = viewModel.isInitialized
+//            val isInitialised = viewModel.isInitialized
 
 //            if (isInitialised.value == true) {
                 observeViewModel(view)
