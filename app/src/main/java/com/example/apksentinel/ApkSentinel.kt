@@ -30,13 +30,13 @@ class ApkSentinel : Application() {
 
     private val applicationScope = CoroutineScope(Dispatchers.Main)
 
-    private val _isInitialized = MutableLiveData(false)
-    val isInitialized: LiveData<Boolean> get() = _isInitialized
+    val isInitialized = MutableLiveData(false)
+
 
     override fun onCreate() {
         super.onCreate()
 
-        _isInitialized.value = false
+        isInitialized.value = false
 
 
         NotificationUtil.createNotificationChannel(this)
@@ -60,7 +60,7 @@ class ApkSentinel : Application() {
                                 insertIntoApkDatabase(apkItemDao, apkItem = it)
 
                             }
-                            _isInitialized.postValue(true)
+                            isInitialized.postValue(true)
                             NotificationUtil.sendNotification(this@ApkSentinel, "Apk Sentinel", "Database populated")
                         } else {
                             // Sync database with current phone state
@@ -89,17 +89,17 @@ class ApkSentinel : Application() {
     //                        Log.d("Apk Sentinel", list.size.toString() + " retrieved")
                             }
 
-                            _isInitialized.postValue(true)
+                            isInitialized.postValue(true)
                         }
                         NotificationUtil.sendNotification(this@ApkSentinel, "Apk Sentinel", "Database synced")
                     }
                 } catch (e: Exception) {
-                    _isInitialized.postValue(false)
+                    isInitialized.postValue(false)
                     Log.e("ApkSentinelInit", "Exception during database operations", e)
                 }
             }
         } catch (e: IllegalStateException) {
-            _isInitialized.postValue(false)
+            isInitialized.postValue(false)
             if (e.message?.contains("Room cannot verify the data integrity") == true) {
                 Log.e("RoomError", "Schema has changed without an update in version number!")
             } else {
