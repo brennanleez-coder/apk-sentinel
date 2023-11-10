@@ -44,15 +44,14 @@ class DashboardFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        Log.d("Dashboard", "intialised")
         //Observe for isInitialised before loading dashboard
-//        val app = activity?.application as? ApkSentinel
-//        app?.isInitialized?.observe(viewLifecycleOwner) { initialized ->
-//            if (initialized) {
-//                initDashboard(view)
-//            }
-//        }
-        initDashboard(view)
+        val app = activity?.application as? ApkSentinel
+        app?.isInitialized?.observe(viewLifecycleOwner) { initialized ->
+            if (initialized) {
+                initDashboard(view)
+            }
+        }
+//        initDashboard(view)
     }
 
     private fun initDashboard(view: View) {

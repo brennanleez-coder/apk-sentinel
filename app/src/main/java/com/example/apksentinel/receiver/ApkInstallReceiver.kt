@@ -33,11 +33,14 @@ class ApkInstallReceiver : BroadcastReceiver() {
         }
     }
 
-    private suspend fun handleIntent(context: Context?, intent: Intent) {
+    private fun handleIntent(context: Context?, intent: Intent) {
+        if (context == null) {
+            return
+        }
         val packageName = intent.data?.encodedSchemeSpecificPart
 
 
-        val database = ApkItemDatabase.getDatabase(context!!)
+        val database = ApkItemDatabase.getDatabase(context)
         val apkItemDao = database.apkItemDao()
 
 

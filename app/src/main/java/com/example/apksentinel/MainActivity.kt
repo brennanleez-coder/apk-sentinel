@@ -43,12 +43,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun fetchData() {
         CoroutineScope(Dispatchers.IO).launch {
-            //always call from the loopback address instead of localhost or 127.0.0.1
             val url = "http://10.0.2.2:3000/api/hello"
-            val response = HttpUtil.get(url)
-            withContext(Dispatchers.Main) {
-                Log.d("Apk Sentinel", "Response: $response")
-                // Update UI here if needed
+            val postBody = "{\"apkHash\":\"value\", \"packageName\": \"value\"}"
+
+            try {
+                val response = HttpUtil.post(url, postBody)
+                withContext(Dispatchers.Main) {
+                    Log.d("Apk Sentinel", "Response: $response")
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Log.e("Apk Sentinel", "Error: ${e.message}")
+                }
             }
         }
     }
