@@ -1,19 +1,7 @@
 package com.example.apksentinel
 
-import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.widget.Button
-import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.example.apksentinel.adapter.ViewPagerAdapter
@@ -41,8 +29,6 @@ class MainActivity : AppCompatActivity() {
                 3 -> tab.text = "Apk Info"
             }
         }.attach()
-
-
     }
 
     private fun loadPages (savedInstanceState: Bundle?, vararg pairs: Pair<Int, Fragment>) {
@@ -54,6 +40,4 @@ class MainActivity : AppCompatActivity() {
             transaction.commit()
         }
     }
-
-
 }
