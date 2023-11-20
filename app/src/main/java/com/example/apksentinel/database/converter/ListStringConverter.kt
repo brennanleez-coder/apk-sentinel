@@ -1,4 +1,4 @@
-package com.example.apksentinel.database
+package com.example.apksentinel.database.converter
 
 import androidx.room.TypeConverter
 

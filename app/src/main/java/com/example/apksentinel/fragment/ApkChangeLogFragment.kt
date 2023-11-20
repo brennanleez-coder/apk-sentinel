@@ -63,7 +63,7 @@ class ApkChangeLogFragment : Fragment() {
                 permissionsRemoved = listOf("LOCATION"),
                 timestamp = System.currentTimeMillis()
             )
-            // Add more mock logs as required...
+            // Add more mock logs as required
         )
         changeLogAdapter = ApkChangeLogAdapter(emptyList())
         recyclerView.adapter = changeLogAdapter
@@ -110,8 +110,6 @@ class ApkChangeLogFragment : Fragment() {
         super.onDestroy()
 //        coroutineScope.cancel()
     }
-
-
 
 
     companion object {

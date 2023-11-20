@@ -53,7 +53,6 @@ class ApkListAdapter(initialApkList: List<ApkItem>) : RecyclerView.Adapter<ApkLi
 
         holder.itemView.setOnClickListener {
             listener?.onItemClick(currentItem.id.toInt()-1)
-            //tbh idk why must -1 when it is 1-based
         }
 
     }
