@@ -114,6 +114,12 @@ class ApkSentinel : Application() {
             } else {
                 Log.e("Error", e.message ?: "An error occurred")
             }
+        } catch (e: IllegalArgumentException) {
+            e.printStackTrace()
+            Log.e("Apk Sentinel","$e.message")
+        } catch (e: RuntimeException) {
+            e.printStackTrace()
+            Log.e("Apk Sentinel","$e.message")
         }
     }
 
@@ -156,7 +162,9 @@ class ApkSentinel : Application() {
 
             val apkPath = packageInfo.applicationInfo.sourceDir
 //            Log.d("Check Path", "$packageName: $apkPath")
-            val appHash = HashUtil.getSHA256HashOfFile(apkPath)
+//            val appHash = HashUtil.getSHA256HashOfFile(apkPath)
+            val appHash = HashUtil.hashApk(apkPath, "SHA-256")
+
             val appCertHash = packageInfo?.signatures?.get(0)?.toCharsString()
 
             val apkItem = appCertHash?.let {

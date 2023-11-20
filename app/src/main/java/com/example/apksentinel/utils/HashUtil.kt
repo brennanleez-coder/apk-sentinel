@@ -1,6 +1,8 @@
 package com.example.apksentinel.utils
 
+import java.io.BufferedInputStream
 import java.io.File
+import java.io.FileInputStream
 import java.security.MessageDigest
 
 object HashUtil {
@@ -24,8 +26,21 @@ object HashUtil {
 
         try {
             val digest = MessageDigest.getInstance(algorithm)
-            val apkBytes = file.readBytes()
-            val hashBytes = digest.digest(apkBytes)
+
+            // Use a buffered input stream to read the file in chunks
+            val inputStream = BufferedInputStream(FileInputStream(file))
+            val buffer = ByteArray(8 * 1024)  // 8 KB buffer
+            var bytesRead: Int
+
+            // Read the file in chunks and update the digest
+            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                digest.update(buffer, 0, bytesRead)
+            }
+
+            // Close the input stream after reading the file
+            inputStream.close()
+
+            val hashBytes = digest.digest()
             val hashStringBuilder = StringBuilder()
 
             for (byte in hashBytes) {
