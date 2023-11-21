@@ -9,6 +9,7 @@ import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
 import com.example.apksentinel.database.entities.ApkItem
 import com.example.apksentinel.utils.HashUtil
+import com.example.apksentinel.utils.HttpUtil
 import com.example.apksentinel.utils.NotificationUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,10 +44,14 @@ class ApkInstallReceiver : BroadcastReceiver() {
         val database = ApkItemDatabase.getDatabase(context)
         val apkItemDao = database.apkItemDao()
 
+//      TODO: Wrap in coroutines, notifications still work
+//        HttpUtil.get("http://10.0.0.2:8000/")
+
 
 
         when(intent.action) {
 
+//            TODO: HIT THE ENDPOINT WHENEVER A NEW INTENT IS RECEIVED
 
             //Listen to app installation (fresh installation or reinstallation)
             "android.intent.action.PACKAGE_ADDED" -> {
@@ -56,7 +61,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
                         val packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_META_DATA)
                         permissions = packageInfo.requestedPermissions?.toList() ?: emptyList()
                         apkPath = packageInfo.applicationInfo.sourceDir
-                        appHash = HashUtil.getSHA256HashOfFile(apkPath)
+                        appHash = HashUtil.hashApk(apkPath, "SHA-256")
                         appCertHash = packageInfo?.signatures?.get(0)?.toCharsString().toString()
                         versionName = packageInfo.versionName
                         versionCode = packageInfo.versionCode

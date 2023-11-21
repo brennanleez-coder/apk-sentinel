@@ -43,11 +43,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun fetchData() {
         CoroutineScope(Dispatchers.IO).launch {
-            val url = "http://10.0.2.2:3000/api/hello"
-            val postBody = "{\"apkHash\":\"value\", \"packageName\": \"value\"}"
+            val url = "http://10.0.2.2:8000/"
 
             try {
-                val response = HttpUtil.post(url, postBody)
+                val response = HttpUtil.get(url)
                 withContext(Dispatchers.Main) {
                     Log.d("Apk Sentinel", "Response: $response")
                 }
