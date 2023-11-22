@@ -15,12 +15,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.io.IOException
 import kotlin.properties.Delegates
 
 
 class ApkInstallReceiver : BroadcastReceiver() {
 
-    private lateinit var apkItemDao: ApkItemDao
     private lateinit var permissions: List<String>
     private lateinit var apkPath: String
     private lateinit var appHash: String
@@ -44,27 +44,43 @@ class ApkInstallReceiver : BroadcastReceiver() {
         val database = ApkItemDatabase.getDatabase(context)
         val apkItemDao = database.apkItemDao()
 
-//      TODO: Wrap in coroutines, notifications still work
-//        HttpUtil.get("http://10.0.0.2:8000/")
+        // Just to test
+
+        if (packageName != null) {
+            val packageManager = context.packageManager
+            val packageInfo =
+                packageManager.getPackageInfo(packageName, PackageManager.GET_META_DATA)
+            permissions = packageInfo.requestedPermissions?.toList() ?: listOf("")
+            apkPath = packageInfo.applicationInfo.sourceDir
+            appHash = HashUtil.hashApk(apkPath, "SHA-256")
+            appCertHash = packageInfo?.signatures?.get(0)?.toCharsString().toString()
+            versionName = packageInfo.versionName
+            versionCode = packageInfo.versionCode
+            Log.d("Apk Sentinel", "Permissions: ${permissions}")
+
+            val jsonBody = """
+        {
+            "package_name": $packageName,
+            "incoming_apk_hash": $appHash,
+            "incoming_app_cert_hash": ${appCertHash},
+            "incoming_permissions": ${permissions.joinToString(",")}
+        }
+        """
 
 
-
-        when(intent.action) {
+            try {
+                val response = HttpUtil.post("http://10.0.2.2:8000/submit_apk", jsonBody)
+                Log.d("Apk Sentinel", "Response: $response")
+            } catch (e: RuntimeException) {
+                Log.d("Apk Sentinel", "Error: ${e.printStackTrace()}")
+            }
+            when (intent.action) {
 
 //            TODO: HIT THE ENDPOINT WHENEVER A NEW INTENT IS RECEIVED
 
-            //Listen to app installation (fresh installation or reinstallation)
-            "android.intent.action.PACKAGE_ADDED" -> {
-                try {
-                    if (packageName != null) {
-                        val packageManager = context.packageManager
-                        val packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_META_DATA)
-                        permissions = packageInfo.requestedPermissions?.toList() ?: emptyList()
-                        apkPath = packageInfo.applicationInfo.sourceDir
-                        appHash = HashUtil.hashApk(apkPath, "SHA-256")
-                        appCertHash = packageInfo?.signatures?.get(0)?.toCharsString().toString()
-                        versionName = packageInfo.versionName
-                        versionCode = packageInfo.versionCode
+                //Listen to app installation (fresh installation or reinstallation)
+                "android.intent.action.PACKAGE_ADDED" -> {
+                    try {
 
 
                         var apkRetrieved = apkItemDao.getApkItemByPackageName(packageName)
@@ -72,7 +88,8 @@ class ApkInstallReceiver : BroadcastReceiver() {
                         if (apkRetrieved != null) {
                             //Reinstallation
 
-                            val isSamePermissions = permissions?.equals(apkRetrieved.permissions) ?: false
+                            val isSamePermissions =
+                                permissions?.equals(apkRetrieved.permissions) ?: false
                             val isSameAppHash = appHash == apkRetrieved.appHash
                             val isSameAppCertHash = appCertHash == apkRetrieved.appCertHash
                             val isSameVersionName = versionName == apkRetrieved.versionName
@@ -111,36 +128,49 @@ class ApkInstallReceiver : BroadcastReceiver() {
                             //Fresh Installation
                             handleFreshInstallation(apkItemDao, context, packageName)
                         }
+                        NotificationUtil.sendNotification(
+                            context,
+                            "New App Installation",
+                            "$packageName's App Cert might not be trusted"
+                        )
+
+                    } catch (e: PackageManager.NameNotFoundException) {
+                        Log.e("Apk Sentinel", "$context: Package Name Not Found")
+                    } catch (exception: Exception) {
+                        Log.e("Capture Install intent", "$exception")
                     }
-                    NotificationUtil.sendNotification(context, "New App Installation", "$packageName's App Cert might not be trusted")
-
-                } catch (e: PackageManager.NameNotFoundException) {
-                    Log.e("Apk Sentinel", "$context: Package Name Not Found")
-                }catch (exception: Exception) {
-                    Log.e("Capture Install intent","$exception")
                 }
-            }
-            "android.intent.action.PACKAGE_REMOVED" -> {
-                NotificationUtil.sendNotification(context!!, "App Uninstalled", "$packageName has been uninstalled.")
+
+                "android.intent.action.PACKAGE_REMOVED" -> {
+                    NotificationUtil.sendNotification(
+                        context!!,
+                        "App Uninstalled",
+                        "$packageName has been uninstalled."
+                    )
 
 
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        val apkItem = packageName?.let { apkItemDao.getApkItemByPackageName(it) }
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            val apkItem =
+                                packageName?.let { apkItemDao.getApkItemByPackageName(it) }
 
-                        //Soft Deletion of apkItem
-                        apkItem?.let {
-                            it.isDeleted = true
-                            apkItemDao.updateApkItem(it)
-                            Log.d("Apk Sentinel", "Apk Entity ID:${apkItem.id} isDeleted has been updated, to ${it.isDeleted}")
+                            //Soft Deletion of apkItem
+                            apkItem?.let {
+                                it.isDeleted = true
+                                apkItemDao.updateApkItem(it)
+                                Log.d(
+                                    "Apk Sentinel",
+                                    "Apk Entity ID:${apkItem.id} isDeleted has been updated, to ${it.isDeleted}"
+                                )
+                            }
+                        } catch (e: Exception) {
+                            Log.d("Apk Sentinel", "Error message: ${e.message}")
                         }
-                    } catch (e: Exception) {
-                        Log.d("Apk Sentinel", "Error message: ${e.message}")
                     }
                 }
-            }
-            "android.intent.action.PACKAGE_REPLACED" -> {
-                /*If package replaced has a different signing cert as compared to the previous update,
+
+                "android.intent.action.PACKAGE_REPLACED" -> {
+                    /*If package replaced has a different signing cert as compared to the previous update,
                 * android will block installation by default
                 * No action needed
                 */
@@ -153,9 +183,11 @@ class ApkInstallReceiver : BroadcastReceiver() {
 //                } else {
 //                    NotificationUtil.sendNotification(context, "App Updated", "$packageName has been updated but the APK hash remains the same.")
 //                }
-            }
-            "android.intent.action.QUERY_PACKAGE_RESTART" -> {
-                Log.i("Apk Sentinel", "$packageName will be restarted.")
+                }
+
+                "android.intent.action.QUERY_PACKAGE_RESTART" -> {
+                    Log.i("Apk Sentinel", "$packageName will be restarted.")
+                }
             }
         }
     }
