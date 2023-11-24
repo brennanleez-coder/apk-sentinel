@@ -22,8 +22,6 @@ class MainActivity : AppCompatActivity() {
             val viewPager: ViewPager2 = findViewById(R.id.viewPager)
             val tabLayout: TabLayout = findViewById(R.id.tabLayout)
 
-            fetchData()
-
             val adapter = ViewPagerAdapter(supportFragmentManager, lifecycle)
             viewPager.adapter = adapter
 
@@ -40,23 +38,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun fetchData() {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = post("http://10.0.2.2:8000/", """
-            {
-                "package_name": "asdasd",
-                "incoming_apk_hash": "asdasd",
-                "incoming_app_cert_hash": "asdasd",
-                "incoming_permissions": "asdasd"
-            }
-            """.trimIndent())
-                Log.d("NETWORKCALL", "Response: $response")
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
+
     private fun loadPages (savedInstanceState: Bundle?, vararg pairs: Pair<Int, Fragment>) {
         if (savedInstanceState == null) {
             val transaction = supportFragmentManager.beginTransaction()
