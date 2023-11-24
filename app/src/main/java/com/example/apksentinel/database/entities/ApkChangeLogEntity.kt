@@ -9,6 +9,7 @@ data class ApkChangeLogEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val packageName: String,
+    val appHash: String,
     val oldAppCertHash: String? = null,
     val newAppCertHash: String? = null,
     val permissionsAdded: List<String>? = null,

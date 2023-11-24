@@ -49,6 +49,7 @@ class ApkChangeLogFragment : Fragment() {
         val mockLogs = listOf(
             ApkChangeLogEntity(
                 packageName = "com.example.mockapp1",
+                appHash = "appHash1",
                 oldAppCertHash = "oldHash1",
                 newAppCertHash = "newHash1",
                 permissionsAdded = listOf("CAMERA", "MICROPHONE"),
@@ -57,6 +58,7 @@ class ApkChangeLogFragment : Fragment() {
             ),
             ApkChangeLogEntity(
                 packageName = "com.example.mockapp2",
+                appHash = "appHash2",
                 oldAppCertHash = "oldHash2",
                 newAppCertHash = "newHash2",
                 permissionsAdded = listOf(),

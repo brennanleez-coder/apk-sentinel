@@ -6,7 +6,7 @@ object ListStringConverter {
 
     @TypeConverter
     @JvmStatic
-    fun fromString(value: String): List<String> {
+    fun fromString(value: String): List<String?> {
         return value.split(",").map { it.trim() }
     }
 

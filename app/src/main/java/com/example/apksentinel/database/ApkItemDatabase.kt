@@ -12,7 +12,7 @@ import com.example.apksentinel.database.entities.ApkChangeLogEntity
 import com.example.apksentinel.database.entities.ApkItem
 
 
-@Database(entities = [ApkItem::class, ApkChangeLogEntity::class], version = 4, exportSchema = false)
+@Database(entities = [ApkItem::class, ApkChangeLogEntity::class], version = 1, exportSchema = false)
 @TypeConverters(ListStringConverter::class)
 abstract class ApkItemDatabase : RoomDatabase() {
     abstract fun apkItemDao(): ApkItemDao

@@ -6,17 +6,20 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.util.Log
 import com.example.apksentinel.database.ApkItemDatabase
+import com.example.apksentinel.database.dao.ApkChangeLogDao
 import com.example.apksentinel.database.dao.ApkItemDao
+import com.example.apksentinel.database.entities.ApkChangeLogEntity
 import com.example.apksentinel.database.entities.ApkItem
 import com.example.apksentinel.model.ApiResponse
 import com.example.apksentinel.model.ApkInformation
 import com.example.apksentinel.utils.HashUtil
 import com.example.apksentinel.utils.HttpUtil
+import com.example.apksentinel.utils.ListToStringConverterUtil
 import com.example.apksentinel.utils.NotificationUtil
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.properties.Delegates
@@ -30,11 +33,14 @@ class ApkInstallReceiver : BroadcastReceiver() {
     private lateinit var appCertHash: String
     private lateinit var versionName: String
     private var versionCode by Delegates.notNull<Int>()
+    private val receiverScope = CoroutineScope(Dispatchers.IO)
 
     override fun onReceive(context: Context?, intent: Intent) {
-        GlobalScope.launch(Dispatchers.IO) {
+        receiverScope.launch(Dispatchers.IO) {
             handleIntent(context, intent)
         }
+
+
     }
 
     private suspend fun handleIntent(context: Context?, intent: Intent) {
@@ -47,6 +53,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
 
         val database = ApkItemDatabase.getDatabase(context)
         val apkItemDao = database.apkItemDao()
+        val apkChangeLogDao = database.apkChangeLogDao()
 
         if (packageName != null) {
 
@@ -60,28 +67,14 @@ class ApkInstallReceiver : BroadcastReceiver() {
                 appCertHash = HashUtil.hashCertWithSHA256(packageName, packageManager)
                 versionName = packageInfo.versionName
                 versionCode = packageInfo.versionCode
-
                 permissions = if (packageInfo.requestedPermissions != null) {
-                    packageInfo.requestedPermissions.toList().joinToString(",")
+                    ListToStringConverterUtil.listToString(packageInfo.requestedPermissions.toList())
                 } else {
                     ""
                 }
 
-                val apkInfo = ApkInformation(packageName, appHash, appCertHash, permissions)
-                val jsonBody = Gson().toJson(apkInfo)
-
-                try {
-                    val response = HttpUtil.post("http://10.0.2.2:8000/submit_apk", jsonBody)
-                    val responseObj = Gson().fromJson(response, ApiResponse::class.java)
-                    println("Response: $responseObj")
-                    if (responseObj.status == "success") {
-                        withContext(Dispatchers.Main) {
-                            NotificationUtil.sendNotification(context, "Verifying Apk","$packageName sent to Sentinel Sight")
-                        }
-                    }
-                } catch (e: Exception) {
-                    println("Exception: ${e.printStackTrace()}")
-                }
+                // Send to Backend component to check for Apk Legitimacy
+                sendForApkVerification(packageName, context)
 
                 try {
                     when (action) {
@@ -90,24 +83,25 @@ class ApkInstallReceiver : BroadcastReceiver() {
                                 *  android will block installation by default
                                 *  No action needed
                                 */
-
-
                         }
-
-
-                        Intent.ACTION_PACKAGE_ADDED -> {/* Listen to app installation
+                        Intent.ACTION_PACKAGE_ADDED -> {
+                            /* Listen to app installation
                             *  CASE 1: Fresh installation
                             *  CASE 2: Re-installation
                             */
-
                             val apkRetrieved = apkItemDao.getApkItemByPackageName(packageName)
 
                             if (apkRetrieved != null) {
-                                //Reinstallation
+                                // Reinstallation
                                 handleReinstallation(apkRetrieved, apkItemDao)
                             } else {
                                 //Fresh Installation
-                                handleFreshInstallation(apkItemDao, context, packageName)
+                                handleFreshInstallation(apkItemDao, apkChangeLogDao, context,
+                                    packageName,
+                                    appHash,
+                                    appCertHash,
+                                    // Convert permission string back to List<String>
+                                    ListToStringConverterUtil.stringToList(permissions))
                             }
                             withContext(Dispatchers.Main) {
                                 NotificationUtil.sendNotification(
@@ -132,6 +126,28 @@ class ApkInstallReceiver : BroadcastReceiver() {
             }
         }
 
+    }
+
+    private suspend fun sendForApkVerification(packageName: String, context: Context) {
+        val apkInfo = ApkInformation(packageName, appHash, appCertHash, permissions)
+        val jsonBody = Gson().toJson(apkInfo)
+
+        try {
+            val response = HttpUtil.post("http://10.0.2.2:8000/submit_apk", jsonBody)
+            val responseObj = Gson().fromJson(response, ApiResponse::class.java)
+            println("Response: $responseObj")
+            if (responseObj.status == "success") {
+                withContext(Dispatchers.Main) {
+                    NotificationUtil.sendNotification(
+                        context,
+                        "Verifying Apk",
+                        "$packageName sent to Sentinel Sight"
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            println("Exception: ${e.printStackTrace()}")
+        }
     }
 
 
@@ -163,7 +179,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
                 versionName = versionName,
                 installDate = System.currentTimeMillis(),
                 lastUpdateDate = System.currentTimeMillis(),
-                permissions = permissions.split(",").filter { it.isNotEmpty() },
+                permissions = ListToStringConverterUtil.stringToList(permissions),
                 isSystemApp = apkRetrieved.isSystemApp,
                 appCertHash = appCertHash,
                 appHash = appHash,
@@ -203,24 +219,38 @@ class ApkInstallReceiver : BroadcastReceiver() {
     }
 
     private fun handleFreshInstallation(
-        apkItemDao: ApkItemDao, context: Context?, packageName: String?
+        apkItemDao: ApkItemDao,
+        apkChangeLogDao: ApkChangeLogDao,
+        context: Context?,
+        packageName: String?,
+        appHash: String,
+        appCertHash: String,
+        permissions: List<String>
     ) {
         if (context == null || packageName == null) {
             return
         }
         //Check if appCertHash has been seen before
         val listOfTrustedAppCertHash: List<String> = apkItemDao.getAllAppCertHash()
-        val isTrustedIncomingAppCertHash = listOfTrustedAppCertHash.contains(appCertHash)
+        val isTrustedIncomingAppCertHash = listOfTrustedAppCertHash.contains(this.appCertHash)
+
+
         val message: String =
             "$packageName's App Cert is" + if (isTrustedIncomingAppCertHash) "trusted" else "not trusted"
 
-        //Add insertion into change_apk_log
+        // First record of respective package name in ApkChangeLog Table
+        val changeLogEntity = ApkChangeLogEntity(
+            packageName= packageName,
+            appHash= appHash,
+            oldAppCertHash= appHash,
+            permissionsAdded = permissions
+        )
+        apkChangeLogDao.insert(changeLogEntity)
 
         NotificationUtil.sendNotification(
-            context, "New App Installation", message
+            context, "$packageName was installed", message
         )
     }
-
     companion object {
         fun newInstance(): ApkInstallReceiver {
             return ApkInstallReceiver()
