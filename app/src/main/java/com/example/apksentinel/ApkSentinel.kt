@@ -50,7 +50,8 @@ class ApkSentinel : Application() {
                     withContext(Dispatchers.IO) {
 
                         val apkCount = apkItemDao.getCount()
-                        var localApkList: MutableList<ApkItem> = getInstalledPackagesAsync(this@ApkSentinel, apkItemDao)
+                        var localApkList: MutableList<ApkItem> =
+                            getInstalledPackagesAsync(this@ApkSentinel, apkItemDao)
 
 
                         if (apkCount <= 0) {
@@ -60,10 +61,15 @@ class ApkSentinel : Application() {
 
                             }
                             isInitialized.postValue(true)
-                            NotificationUtil.sendNotification(this@ApkSentinel, "Apk Sentinel", "Database populated")
+                            NotificationUtil.sendNotification(
+                                this@ApkSentinel,
+                                "Apk Sentinel",
+                                "Database populated"
+                            )
                         } else {
                             // Sync database with current phone state
-                            val databaseApks = apkItemDao.getAllApkItems() //returns a Flow<List<ApkItem>>
+                            val databaseApks =
+                                apkItemDao.getAllApkItems() //returns a Flow<List<ApkItem>>
                             databaseApks.collect { databaseApkList ->
                                 //For each item in localApkList, check if there is not such app in database, this returns new apps
                                 // LOGIC ERROR
@@ -72,11 +78,11 @@ class ApkSentinel : Application() {
                                 }
                                 newApps.forEach {
                                     insertIntoApkDatabase(apkItemDao, apkItem = it)
-    //                            Log.d("Apk Sentinel", "New app found: ${it.packageName}")
+                                    //                            Log.d("Apk Sentinel", "New app found: ${it.packageName}")
                                 }
                                 //for each item in databaseApkList, check if there is no such app in local phone state, this returns deleted apps
                                 val deletedApps = databaseApkList.filter { oldItem ->
-                                    localApkList.none { newItem -> newItem.packageName == oldItem.packageName}
+                                    localApkList.none { newItem -> newItem.packageName == oldItem.packageName }
                                 }
 
                                 deletedApps.forEach {
@@ -85,12 +91,16 @@ class ApkSentinel : Application() {
                                     apkItemDao.updateApkItem(it)
                                 }
 
-    //                        Log.d("Apk Sentinel", list.size.toString() + " retrieved")
+                                //                        Log.d("Apk Sentinel", list.size.toString() + " retrieved")
                             }
 
                             isInitialized.postValue(true)
                         }
-                        NotificationUtil.sendNotification(this@ApkSentinel, "Apk Sentinel", "Database synced")
+                        NotificationUtil.sendNotification(
+                            this@ApkSentinel,
+                            "Apk Sentinel",
+                            "Database synced"
+                        )
                     }
                 } catch (e: Exception) {
                     isInitialized.postValue(false)
@@ -106,10 +116,10 @@ class ApkSentinel : Application() {
             }
         } catch (e: IllegalArgumentException) {
             e.printStackTrace()
-            Log.e("Apk Sentinel","$e.message")
+            Log.e("Apk Sentinel", "$e.message")
         } catch (e: RuntimeException) {
             e.printStackTrace()
-            Log.e("Apk Sentinel","$e.message")
+            Log.e("Apk Sentinel", "$e.message")
         }
     }
 
@@ -119,6 +129,7 @@ class ApkSentinel : Application() {
         filter.addAction("UsbDebuggingChanged")
         registerReceiver(developerOptionsReceiver, filter)
     }
+
     private fun setupApkReceiver() {
         val filter = IntentFilter()
         filter.addAction("android.intent.action.PACKAGE_REMOVED")
@@ -128,7 +139,10 @@ class ApkSentinel : Application() {
         registerReceiver(apkInstallReceiver, filter)
     }
 
-    private fun getInstalledPackagesAsync(context: Context, apkItemDao: ApkItemDao): MutableList<ApkItem> {
+    private fun getInstalledPackagesAsync(
+        context: Context,
+        apkItemDao: ApkItemDao
+    ): MutableList<ApkItem> {
 
         val packageManager = context.packageManager
         val packages =
@@ -157,7 +171,7 @@ class ApkSentinel : Application() {
 //            val appHash = HashUtil.getSHA256HashOfFile(apkPath)
             val appHash = HashUtil.hashApkWithSHA256(apkPath)
 
-            val appCertHash = packageInfo?.signatures?.get(0)?.toCharsString()
+            val appCertHash = HashUtil.hashCertWithSHA256(packageName, packageManager)
 
             val apkItem = appCertHash?.let {
                 ApkItem(
@@ -184,6 +198,7 @@ class ApkSentinel : Application() {
 
         return apkList
     }
+
     private fun insertIntoApkDatabase(apkItemDao: ApkItemDao, apkItem: ApkItem) {
 
 
@@ -233,8 +248,6 @@ class ApkSentinel : Application() {
         unregisterReceiver(developerOptionsReceiver)
 
     }
-
-
 
 
 }

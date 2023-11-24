@@ -20,7 +20,7 @@ import kotlin.properties.Delegates
 
 class ApkInstallReceiver : BroadcastReceiver() {
 
-    private lateinit var permissions: List<String>
+    private lateinit var permissions: String
     private lateinit var apkPath: String
     private lateinit var appHash: String
     private lateinit var appCertHash: String
@@ -53,34 +53,50 @@ class ApkInstallReceiver : BroadcastReceiver() {
                 val packageManager = context.packageManager
                 val packageInfo =
                     packageManager.getPackageInfo(packageName, PackageManager.GET_META_DATA)
-                permissions = packageInfo.requestedPermissions?.toList() ?: listOf("NO PERMISSIONS")
                 apkPath = packageInfo.applicationInfo.sourceDir
                 appHash = HashUtil.hashApkWithSHA256(apkPath)
                 appCertHash = packageInfo?.signatures?.get(0)?.toCharsString().toString()
                 versionName = packageInfo.versionName
                 versionCode = packageInfo.versionCode
 
+                if (packageInfo.requestedPermissions != null) {
+                    permissions = packageInfo.requestedPermissions.toList().joinToString(",")
+                } else {
+                    permissions = ""
+                }
+
+
                 val jsonBody = """
             {
                 "package_name": $packageName,
                 "incoming_apk_hash": $appHash,
                 "incoming_app_cert_hash": ${appCertHash},
-                "incoming_permissions": ${permissions.joinToString(",")}
+                "incoming_permissions": $permissions
             }
             """.trimIndent()
+                Log.d("NETWORKCALL", "Response: ${packageInfo?.signatures?.get(0)?.toCharsString().toString()}")
+
+                Log.d("NETWORKCALL", "Response: ${packageInfo?.signatures?.get(0)?.toCharsString()}")
+
+                Log.d("NETWORKCALL", "Response: ${packageInfo?.signatures?.get(0)}")
+
+                Log.d("NETWORKCALL", "Response: ${packageInfo?.signatures}")
+
 
                 try {
-                    val response = HttpUtil.post("http://10.0.2.2:8000/", jsonBody)
+                    val response = HttpUtil.post("http://10.0.2.2:8000/submit_apk", jsonBody)
                     Log.d("NETWORKCALL", "Response: $response")
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e("NETWORK CALL ERROR", "Exception", e)
                 }
+
                 try {
                     when (action) {
-                        Intent.ACTION_PACKAGE_REPLACED -> {/* If package replaced has a different signing cert as compared to the previous update,
-                            *  android will block installation by default
-                            *  No action needed
-                            */
+                        Intent.ACTION_PACKAGE_REPLACED -> {
+                            /* If package replaced has a different signing cert as compared to the previous update,
+                                *  android will block installation by default
+                                *  No action needed
+                                */
 
 
                         }
@@ -157,7 +173,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
                 versionName = versionName,
                 installDate = System.currentTimeMillis(),
                 lastUpdateDate = System.currentTimeMillis(),
-                permissions = permissions,
+                permissions = permissions.split(",").filter { it.isNotEmpty() },
                 isSystemApp = apkRetrieved.isSystemApp,
                 appCertHash = appCertHash,
                 appHash = appHash,
