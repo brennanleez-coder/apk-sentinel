@@ -7,7 +7,6 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
@@ -19,7 +18,6 @@ import com.example.apksentinel.utils.HashUtil
 import com.example.apksentinel.utils.NotificationUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -54,8 +52,9 @@ class ApkSentinel : Application() {
                         val apkCount = apkItemDao.getCount()
                         var localApkList: MutableList<ApkItem> = getInstalledPackagesAsync(this@ApkSentinel, apkItemDao)
 
-                        // If the database is not populated, get installed packages
+
                         if (apkCount <= 0) {
+                            // If the database is not populated, get installed packages
                             localApkList.map {
                                 insertIntoApkDatabase(apkItemDao, apkItem = it)
 
@@ -156,7 +155,7 @@ class ApkSentinel : Application() {
             val apkPath = packageInfo.applicationInfo.sourceDir
 //            Log.d("Check Path", "$packageName: $apkPath")
 //            val appHash = HashUtil.getSHA256HashOfFile(apkPath)
-            val appHash = HashUtil.hashApk(apkPath, "SHA-256")
+            val appHash = HashUtil.hashApkWithSHA256(apkPath)
 
             val appCertHash = packageInfo?.signatures?.get(0)?.toCharsString()
 

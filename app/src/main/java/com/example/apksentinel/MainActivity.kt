@@ -6,13 +6,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.example.apksentinel.adapter.ViewPagerAdapter
-import com.example.apksentinel.utils.HttpUtil
+import com.example.apksentinel.utils.HttpUtil.post
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -43,17 +42,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun fetchData() {
         CoroutineScope(Dispatchers.IO).launch {
-            val url = "http://10.0.2.2:8000/"
-
             try {
-                val response = HttpUtil.get(url)
-                withContext(Dispatchers.Main) {
-                    Log.d("Apk Sentinel", "Response: $response")
-                }
+                val response = post("http://10.0.2.2:8000/", """
+            {
+                "package_name": "asdasd",
+                "incoming_apk_hash": "asdasd",
+                "incoming_app_cert_hash": "asdasd",
+                "incoming_permissions": "asdasd"
+            }
+            """.trimIndent())
+                Log.d("NETWORKCALL", "Response: $response")
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Log.e("Apk Sentinel", "Error: ${e.message}")
-                }
+                e.printStackTrace()
             }
         }
     }

@@ -8,14 +8,14 @@ import java.security.MessageDigest
 object HashUtil {
 
 
-    fun hashApk(apkFilePath: String, algorithm: String): String {
+    fun hashApkWithSHA256(apkFilePath: String): String {
         val file = File(apkFilePath)
         if (!file.exists()) {
             throw IllegalArgumentException("APK file does not exist.")
         }
 
         try {
-            val digest = MessageDigest.getInstance(algorithm)
+            val digest = MessageDigest.getInstance("SHA-256")
 
             // Use a buffered input stream to read the file in chunks
             val inputStream = BufferedInputStream(FileInputStream(file))
