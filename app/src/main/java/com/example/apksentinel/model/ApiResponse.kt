@@ -1,6 +1,6 @@
 package com.example.apksentinel.model
 
 data class ApiResponse(
-    val messsage: String,
+    val message: String,
     val status: String
 )
