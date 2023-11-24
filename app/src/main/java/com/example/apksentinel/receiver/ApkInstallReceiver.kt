@@ -52,42 +52,51 @@ class ApkInstallReceiver : BroadcastReceiver() {
             if (action == Intent.ACTION_PACKAGE_ADDED || action == Intent.ACTION_PACKAGE_REPLACED) {
                 val packageManager = context.packageManager
                 val packageInfo =
-                    packageManager.getPackageInfo(packageName, PackageManager.GET_META_DATA)
+                    packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
                 apkPath = packageInfo.applicationInfo.sourceDir
                 appHash = HashUtil.hashApkWithSHA256(apkPath)
-                appCertHash = packageInfo?.signatures?.get(0)?.toCharsString().toString()
+                appCertHash = HashUtil.hashCertWithSHA256(packageName, packageManager)
                 versionName = packageInfo.versionName
                 versionCode = packageInfo.versionCode
 
-                if (packageInfo.requestedPermissions != null) {
-                    permissions = packageInfo.requestedPermissions.toList().joinToString(",")
+                permissions = if (packageInfo.requestedPermissions != null) {
+                    packageInfo.requestedPermissions.toList().joinToString(",")
                 } else {
-                    permissions = ""
+                    ""
                 }
 
-
-                val jsonBody = """
-            {
-                "package_name": $packageName,
-                "incoming_apk_hash": $appHash,
-                "incoming_app_cert_hash": ${appCertHash},
-                "incoming_permissions": $permissions
-            }
-            """.trimIndent()
-                Log.d("NETWORKCALL", "Response: ${packageInfo?.signatures?.get(0)?.toCharsString().toString()}")
-
-                Log.d("NETWORKCALL", "Response: ${packageInfo?.signatures?.get(0)?.toCharsString()}")
-
-                Log.d("NETWORKCALL", "Response: ${packageInfo?.signatures?.get(0)}")
-
-                Log.d("NETWORKCALL", "Response: ${packageInfo?.signatures}")
-
-
                 try {
-                    val response = HttpUtil.post("http://10.0.2.2:8000/submit_apk", jsonBody)
-                    Log.d("NETWORKCALL", "Response: $response")
+                    println( """
+                            {
+                                "package_name": $packageName,
+                                "incoming_apk_hash": $appHash,
+                                "incoming_app_cert_hash": $appCertHash,
+                                "incoming_permissions": $permissions
+                            }
+                            """.trimIndent())
+//                    val response = HttpUtil.post(
+//                        "http://10.0.2.2:8000/submit_apk", """
+//                            {
+//                                "package_name": $packageName,
+//                                "incoming_apk_hash": $appHash,
+//                                "incoming_app_cert_hash": $appCertHash,
+//                                "incoming_permissions": $permissions
+//                            }
+//                            """.trimIndent()
+//                    )
+                    val response = HttpUtil.post(
+                        "http://10.0.2.2:8000/submit_apk", """
+                            {
+                                "package_name": "ASDSD",
+                                "incoming_apk_hash": "ASDSDS",
+                                "incoming_app_cert_hash": "ASDSDAS",
+                                "incoming_permissions": "ADASD"
+                            }
+                            """.trimIndent()
+                    )
+                    println("Response: $response")
                 } catch (e: Exception) {
-                    Log.e("NETWORK CALL ERROR", "Exception", e)
+                    println("Exception: ${e.printStackTrace()}")
                 }
 
                 try {
@@ -180,6 +189,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
                 isDeleted = false,
                 timestamp = System.currentTimeMillis()
             )
+            println("${newApkEntity.packageName} Deletion Status: ${newApkEntity.isDeleted}")
             apkItemDao.updateApkItem(newApkEntity)
         }
     }
