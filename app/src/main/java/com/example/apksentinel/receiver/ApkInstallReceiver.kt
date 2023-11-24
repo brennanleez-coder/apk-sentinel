@@ -8,13 +8,17 @@ import android.util.Log
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
 import com.example.apksentinel.database.entities.ApkItem
+import com.example.apksentinel.model.ApiResponse
+import com.example.apksentinel.model.ApkInformation
 import com.example.apksentinel.utils.HashUtil
 import com.example.apksentinel.utils.HttpUtil
 import com.example.apksentinel.utils.NotificationUtil
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.properties.Delegates
 
 
@@ -33,7 +37,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun handleIntent(context: Context?, intent: Intent) {
+    private suspend fun handleIntent(context: Context?, intent: Intent) {
         if (context == null) {
             return
         }
@@ -43,8 +47,6 @@ class ApkInstallReceiver : BroadcastReceiver() {
 
         val database = ApkItemDatabase.getDatabase(context)
         val apkItemDao = database.apkItemDao()
-
-        // Just to test
 
         if (packageName != null) {
 
@@ -65,36 +67,18 @@ class ApkInstallReceiver : BroadcastReceiver() {
                     ""
                 }
 
+                val apkInfo = ApkInformation(packageName, appHash, appCertHash, permissions)
+                val jsonBody = Gson().toJson(apkInfo)
+
                 try {
-                    println( """
-                            {
-                                "package_name": $packageName,
-                                "incoming_apk_hash": $appHash,
-                                "incoming_app_cert_hash": $appCertHash,
-                                "incoming_permissions": $permissions
-                            }
-                            """.trimIndent())
-//                    val response = HttpUtil.post(
-//                        "http://10.0.2.2:8000/submit_apk", """
-//                            {
-//                                "package_name": $packageName,
-//                                "incoming_apk_hash": $appHash,
-//                                "incoming_app_cert_hash": $appCertHash,
-//                                "incoming_permissions": $permissions
-//                            }
-//                            """.trimIndent()
-//                    )
-                    val response = HttpUtil.post(
-                        "http://10.0.2.2:8000/submit_apk", """
-                            {
-                                "package_name": "ASDSD",
-                                "incoming_apk_hash": "ASDSDS",
-                                "incoming_app_cert_hash": "ASDSDAS",
-                                "incoming_permissions": "ADASD"
-                            }
-                            """.trimIndent()
-                    )
-                    println("Response: $response")
+                    val response = HttpUtil.post("http://10.0.2.2:8000/submit_apk", jsonBody)
+                    val responseObj = Gson().fromJson(response, ApiResponse::class.java)
+                    println("Response: $responseObj")
+                    if (responseObj.status == "success") {
+                        withContext(Dispatchers.Main) {
+                            NotificationUtil.sendNotification(context, "Verifying Apk","$packageName sent to Sentinel Sight")
+                        }
+                    }
                 } catch (e: Exception) {
                     println("Exception: ${e.printStackTrace()}")
                 }
@@ -116,7 +100,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
                             *  CASE 2: Re-installation
                             */
 
-                            var apkRetrieved = apkItemDao.getApkItemByPackageName(packageName)
+                            val apkRetrieved = apkItemDao.getApkItemByPackageName(packageName)
 
                             if (apkRetrieved != null) {
                                 //Reinstallation
@@ -125,12 +109,14 @@ class ApkInstallReceiver : BroadcastReceiver() {
                                 //Fresh Installation
                                 handleFreshInstallation(apkItemDao, context, packageName)
                             }
+                            withContext(Dispatchers.Main) {
+                                NotificationUtil.sendNotification(
+                                    context,
+                                    "New App Installation",
+                                    "$packageName's App Cert might not be trusted"
+                                )
+                            }
 
-                            NotificationUtil.sendNotification(
-                                context,
-                                "New App Installation",
-                                "$packageName's App Cert might not be trusted"
-                            )
                         }
                     }
                 } catch (e: PackageManager.NameNotFoundException) {
@@ -141,23 +127,18 @@ class ApkInstallReceiver : BroadcastReceiver() {
             }
         }
         if (action == Intent.ACTION_PACKAGE_REMOVED) {
-            if (packageName != null && context != null) {
+            if (packageName != null) {
                 handlePackageRemoved(context, packageName, apkItemDao)
             }
         }
-        if (action == Intent.ACTION_PACKAGE_RESTARTED) {
-            handlePackageRestart(packageName)
-        }
+
     }
 
-    private fun handlePackageRestart(packageName: String?) {
-        Log.i("Apk Sentinel", "$packageName will be restarted.")
-    }
 
     private fun handleReinstallation(
         apkRetrieved: ApkItem, apkItemDao: ApkItemDao
     ) {
-        val isSamePermissions = permissions?.equals(apkRetrieved.permissions) ?: false
+        val isSamePermissions = permissions?.equals(apkRetrieved.permissions)
         val isSameAppHash = appHash == apkRetrieved.appHash
         val isSameAppCertHash = appCertHash == apkRetrieved.appCertHash
         val isSameVersionName = versionName == apkRetrieved.versionName
@@ -169,7 +150,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
             isSameVersionName,
             isSameVersionCode
         )
-        if (conditions.all { it }) {/*Trigger Backend component
+        if (conditions.all { it!! }) {/*Trigger Backend component
                                 *
                                 *
                                 */
@@ -224,7 +205,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
     private fun handleFreshInstallation(
         apkItemDao: ApkItemDao, context: Context?, packageName: String?
     ) {
-        if (context == null || packageName == null || apkItemDao == null) {
+        if (context == null || packageName == null) {
             return
         }
         //Check if appCertHash has been seen before
@@ -236,7 +217,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
         //Add insertion into change_apk_log
 
         NotificationUtil.sendNotification(
-            context, "New App Installation", "$message"
+            context, "New App Installation", message
         )
     }
 

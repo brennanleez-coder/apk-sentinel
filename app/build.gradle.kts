@@ -64,6 +64,7 @@ dependencies {
     implementation("com.github.AnyChart:AnyChart-Android:1.1.5")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.4.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.3.1")
+    implementation("com.google.code.gson:gson:2.8.6")
 
 
 }
