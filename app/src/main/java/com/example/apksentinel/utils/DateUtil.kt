@@ -7,10 +7,14 @@ import java.util.Locale
 object DateUtil {
 
     private const val DEFAULT_DATE_FORMAT = "dd/MM/yyyy"
+    private const val DEFAULT_TIME_FORMAT = "HH:mm:ss"
 
-    fun formatDate(timestamp: Long, format: String = DEFAULT_DATE_FORMAT): String {
-        val sdf = SimpleDateFormat(format, Locale.getDefault())
-        return sdf.format(Date(timestamp))
+    fun formatDate(timestamp: Long, dateFormat: String = DEFAULT_DATE_FORMAT, timeFormat: String = DEFAULT_TIME_FORMAT): String {
+        val sdfDate = SimpleDateFormat(dateFormat, Locale.getDefault())
+        val sdfTime = SimpleDateFormat(timeFormat, Locale.getDefault())
+
+        val date = Date(timestamp)
+        return "${sdfDate.format(date)} ${sdfTime.format(date)}"
     }
 
     fun parseDate(dateStr: String, format: String = DEFAULT_DATE_FORMAT): Long? {

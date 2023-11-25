@@ -10,17 +10,17 @@ data class ApkItem(
     @PrimaryKey(autoGenerate = true)
     @NotNull
     val id: Long = 0L,
-    val appName: String,
-    val packageName: String,
-    val appIcon: String,
+    var appName: String,
+    var packageName: String,
+    var appIcon: String,
     val versionName: String?,
     val versionCode: Int,
-    val installDate: Long,
-    val lastUpdateDate: Long,
-    val permissions: List<String>,
-    val isSystemApp: Boolean,
-    val appHash: String,
-    val appCertHash: String,
+    var installDate: Long,
+    var lastUpdateDate: Long,
+    var permissions: List<String>,
+    var isSystemApp: Boolean,
+    var appHash: String,
+    var appCertHash: String,
     var isDeleted: Boolean,
-    val timestamp: Long = System.currentTimeMillis()
+    var timestamp: Long = System.currentTimeMillis()
 )

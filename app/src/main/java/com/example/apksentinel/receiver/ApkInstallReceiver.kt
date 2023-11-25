@@ -3,7 +3,10 @@ package com.example.apksentinel.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
+import android.os.Build
 import android.util.Log
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkChangeLogDao
@@ -12,6 +15,8 @@ import com.example.apksentinel.database.entities.ApkChangeLogEntity
 import com.example.apksentinel.database.entities.ApkItem
 import com.example.apksentinel.model.ApiResponse
 import com.example.apksentinel.model.ApkInformation
+import com.example.apksentinel.utils.DateUtil
+import com.example.apksentinel.utils.DrawableUtil
 import com.example.apksentinel.utils.HashUtil
 import com.example.apksentinel.utils.HttpUtil
 import com.example.apksentinel.utils.ListToStringConverterUtil
@@ -19,7 +24,6 @@ import com.example.apksentinel.utils.NotificationUtil
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.properties.Delegates
@@ -27,12 +31,18 @@ import kotlin.properties.Delegates
 
 class ApkInstallReceiver : BroadcastReceiver() {
 
-    private lateinit var permissions: String
-    private lateinit var apkPath: String
-    private lateinit var appHash: String
-    private lateinit var appCertHash: String
+    private lateinit var appName: String
+    private lateinit var packageName: String
+    private lateinit var appIcon: Drawable
     private lateinit var versionName: String
     private var versionCode by Delegates.notNull<Int>()
+    private var installDate by Delegates.notNull<Long>()
+    private var lastUpdateDate by Delegates.notNull<Long>()
+    private lateinit var permissions: String
+    private var isSystemApp by Delegates.notNull<Boolean>()
+    private lateinit var appHash: String
+    private lateinit var appCertHash: String
+
     private val receiverScope = CoroutineScope(Dispatchers.IO)
 
     override fun onReceive(context: Context?, intent: Intent) {
@@ -47,9 +57,19 @@ class ApkInstallReceiver : BroadcastReceiver() {
         if (context == null) {
             return
         }
-        val packageName = intent.data?.encodedSchemeSpecificPart
+
+
+        packageName = intent.data?.encodedSchemeSpecificPart.toString()
         val action = intent.action
 
+
+
+        // When simulating updates, PACKAGE_REMOVED -> PACKAGE_ADDED -> PACKAGE_REPLACED is captured
+        // Filter out PACKAGE_REMOVED and PACKAGE_ADDED and only handle PACKAGE_REPLACED
+        // ONLY WHEN the package can already be found in PackageManager signifying Updates
+        val packageManager = context.packageManager
+
+        println(action)
 
         val database = ApkItemDatabase.getDatabase(context)
         val apkItemDao = database.apkItemDao()
@@ -59,22 +79,33 @@ class ApkInstallReceiver : BroadcastReceiver() {
 
 
             if (action == Intent.ACTION_PACKAGE_ADDED || action == Intent.ACTION_PACKAGE_REPLACED) {
-                val packageManager = context.packageManager
                 val packageInfo =
                     packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
-                apkPath = packageInfo.applicationInfo.sourceDir
+                val apkPath = packageInfo.applicationInfo.sourceDir
+                appName = packageManager.getApplicationLabel(packageInfo.applicationInfo).toString()
+                appIcon = packageManager.getApplicationIcon(packageName)
                 appHash = HashUtil.hashApkWithSHA256(apkPath)
                 appCertHash = HashUtil.hashCertWithSHA256(packageName, packageManager)
                 versionName = packageInfo.versionName
-                versionCode = packageInfo.versionCode
+                versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    packageInfo.longVersionCode.toInt()
+                } else {
+                    packageInfo.versionCode
+                }
+                installDate = packageInfo.firstInstallTime
+                lastUpdateDate = packageInfo.lastUpdateTime
+                isSystemApp =
+                    (packageInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+
+
+
                 permissions = if (packageInfo.requestedPermissions != null) {
                     ListToStringConverterUtil.listToString(packageInfo.requestedPermissions.toList())
                 } else {
                     ""
                 }
 
-                // Send to Backend component to check for Apk Legitimacy
-                sendForApkVerification(packageName, context)
+
 
                 try {
                     when (action) {
@@ -83,6 +114,18 @@ class ApkInstallReceiver : BroadcastReceiver() {
                                 *  android will block installation by default
                                 *  No action needed
                                 */
+                            val apkItem = packageName?.let { apkItemDao.getApkItemByPackageName(it) }
+
+                            // Soft Deletion of apkItem
+                            apkItem?.let {
+                                it.isDeleted = false
+                                apkItemDao.updateApkItem(it)
+                                Log.d(
+                                    "Apk Sentinel",
+                                    "Apk:${apkItem.packageName} isDeleted has been updated, to ${it.isDeleted}"
+                                )
+                            }
+
                         }
                         Intent.ACTION_PACKAGE_ADDED -> {
                             /* Listen to app installation
@@ -90,29 +133,21 @@ class ApkInstallReceiver : BroadcastReceiver() {
                             *  CASE 2: Re-installation
                             */
                             val apkRetrieved = apkItemDao.getApkItemByPackageName(packageName)
-
                             if (apkRetrieved != null) {
                                 // Reinstallation
-                                handleReinstallation(apkRetrieved, apkItemDao)
+                                handleReinstallation(context, apkRetrieved, apkItemDao,
+                                    permissions, appHash, appCertHash, versionName, versionCode)
+
                             } else {
                                 //Fresh Installation
-                                handleFreshInstallation(apkItemDao, apkChangeLogDao, context,
-                                    packageName,
-                                    appHash,
-                                    appCertHash,
-                                    // Convert permission string back to List<String>
-                                    ListToStringConverterUtil.stringToList(permissions))
-                            }
-                            withContext(Dispatchers.Main) {
-                                NotificationUtil.sendNotification(
-                                    context,
-                                    "New App Installation",
-                                    "$packageName's App Cert might not be trusted"
-                                )
-                            }
+                                handleFreshInstallation(apkItemDao, apkChangeLogDao, context)
 
+                            }
                         }
                     }
+
+                    // Send to Backend component to check for Apk Legitimacy
+                    sendForApkVerification(packageName, context)
                 } catch (e: PackageManager.NameNotFoundException) {
                     Log.e("Apk Sentinel", "$context: Package Name Not Found")
                 } catch (exception: Exception) {
@@ -151,14 +186,29 @@ class ApkInstallReceiver : BroadcastReceiver() {
     }
 
 
-    private fun handleReinstallation(
-        apkRetrieved: ApkItem, apkItemDao: ApkItemDao
+//    Handle Reinstallation of an existing application in apk_database
+//    @params: context: Current Apk Context
+//    @params apkRetrieved: Retrieve the apk from installed_apk
+//    @params: apkItemDao: ApkItemDao for database operations on installed_apk
+//    @params: permissions, appHash, appCertHash, versionName, versionCode:
+//              information retrieved from re-installed apk
+//    @return: void
+    private suspend fun handleReinstallation(
+    context: Context,
+    apkRetrieved: ApkItem,
+    apkItemDao: ApkItemDao,
+    permissions: String,
+    appHash: String,
+    appCertHash: String,
+    versionName: String,
+    versionCode: Int
     ) {
-        val isSamePermissions = permissions?.equals(apkRetrieved.permissions)
+        val isSamePermissions = permissions?.equals(ListToStringConverterUtil.listToString(apkRetrieved.permissions)) // Convert both permissions to String then compare
         val isSameAppHash = appHash == apkRetrieved.appHash
         val isSameAppCertHash = appCertHash == apkRetrieved.appCertHash
         val isSameVersionName = versionName == apkRetrieved.versionName
         val isSameVersionCode = versionCode == apkRetrieved.versionCode
+
         val conditions = listOf(
             isSamePermissions,
             isSameAppHash,
@@ -166,90 +216,121 @@ class ApkInstallReceiver : BroadcastReceiver() {
             isSameVersionName,
             isSameVersionCode
         )
+        println(conditions.joinToString(","))
+
+        apkRetrieved?.let {
+            it.isDeleted = false
+            it.appName = apkRetrieved.appName
+            it.packageName = apkRetrieved.packageName
+            it.appIcon = apkRetrieved.appIcon
+            this.versionCode = this.versionCode
+            this.versionName = this.versionName
+            it.installDate = System.currentTimeMillis()
+            it.lastUpdateDate = System.currentTimeMillis()
+            it.permissions = ListToStringConverterUtil.stringToList(this.permissions)
+            it.isSystemApp = apkRetrieved.isSystemApp
+            it.appCertHash = this.appCertHash
+            it.appHash = this.appHash
+            it.timestamp = System.currentTimeMillis()
+            apkItemDao.updateApkItem(it)
+        }
+
         if (conditions.all { it!! }) {/*Trigger Backend component
-                                *
-                                *
-                                */
-        } else {
-            val newApkEntity = ApkItem(
-                appName = apkRetrieved.appName,
-                packageName = apkRetrieved.packageName,
-                appIcon = apkRetrieved.appIcon,
-                versionCode = versionCode,
-                versionName = versionName,
-                installDate = System.currentTimeMillis(),
-                lastUpdateDate = System.currentTimeMillis(),
-                permissions = ListToStringConverterUtil.stringToList(permissions),
-                isSystemApp = apkRetrieved.isSystemApp,
-                appCertHash = appCertHash,
-                appHash = appHash,
-                isDeleted = false,
-                timestamp = System.currentTimeMillis()
+                                    *
+                                    *
+                                    */
+            } else {
+
+
+            }
+
+        withContext(Dispatchers.Main) {
+            NotificationUtil.sendNotification(
+                context, "App Reinstallation Detected", "${apkRetrieved.appName}: ${apkRetrieved.packageName} uninstalled at ${DateUtil.formatDate(System.currentTimeMillis())}."
             )
-            println("${newApkEntity.packageName} Deletion Status: ${newApkEntity.isDeleted}")
-            apkItemDao.updateApkItem(newApkEntity)
         }
     }
 
-    private fun handlePackageRemoved(
+    private suspend fun handlePackageRemoved(
         context: Context, packageName: String?, apkItemDao: ApkItemDao
     ) {
-        NotificationUtil.sendNotification(
-            context, "App Uninstalled", "$packageName has been uninstalled."
-        )
-
-
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val apkItem = packageName?.let { apkItemDao.getApkItemByPackageName(it) }
 
-                // Soft Deletion of apkItem
-                apkItem?.let {
-                    it.isDeleted = true
-                    apkItemDao.updateApkItem(it)
-                    Log.d(
-                        "Apk Sentinel",
-                        "Apk:${apkItem.packageName} isDeleted has been updated, to ${it.isDeleted}"
-                    )
+                if (apkItem != null) {
+                    // Soft Deletion of apkItem
+                    apkItem?.let {
+                        it.isDeleted = true
+                        apkItemDao.updateApkItem(it)
+                        Log.d(
+                            "Apk Sentinel",
+                            "Apk:${apkItem.packageName} isDeleted has been updated, to ${it.isDeleted}"
+                        )
+                    }
+                    withContext(Dispatchers.Main) {
+                        NotificationUtil.sendNotification(
+                            context, "App Uninstalled", "${apkItem.appName}: ${apkItem.packageName} uninstalled at ${DateUtil.formatDate(System.currentTimeMillis())}."
+                        )
+                    }
                 }
             } catch (e: Exception) {
-                Log.d("Apk Sentinel", "Error message: ${e.message}")
+                Log.e("Apk Sentinel", "Error message: ${e.message}")
             }
         }
+
     }
 
-    private fun handleFreshInstallation(
+    private suspend fun handleFreshInstallation(
         apkItemDao: ApkItemDao,
         apkChangeLogDao: ApkChangeLogDao,
         context: Context?,
-        packageName: String?,
-        appHash: String,
-        appCertHash: String,
-        permissions: List<String>
     ) {
         if (context == null || packageName == null) {
             return
         }
-        //Check if appCertHash has been seen before
+
+
+        // Insert into installed_apk
+        val apkToInsert = ApkItem(
+            appName = appName,
+            packageName = packageName,
+            appIcon = DrawableUtil.convertDrawableToBase64String(appIcon).toString(),
+            versionName = versionName,
+            versionCode = versionCode,
+            installDate = installDate,
+            lastUpdateDate = lastUpdateDate,
+            permissions = ListToStringConverterUtil.stringToList(permissions),
+            isSystemApp = isSystemApp,
+            appHash = appHash,
+            appCertHash = appCertHash,
+            isDeleted = false,
+        )
+        apkItemDao.insert(apkToInsert)
+        println("${apkToInsert.packageName} has been inserted")
+
+
+        // Check if appCertHash exists in installed_apk
         val listOfTrustedAppCertHash: List<String> = apkItemDao.getAllAppCertHash()
         val isTrustedIncomingAppCertHash = listOfTrustedAppCertHash.contains(this.appCertHash)
-
-
         val message: String =
             "$packageName's App Cert is" + if (isTrustedIncomingAppCertHash) "trusted" else "not trusted"
 
+        withContext(Dispatchers.Main) {
+            NotificationUtil.sendNotification(
+                context,
+                "New App Installation Detected",
+                message
+            )
+        }
         // First record of respective package name in ApkChangeLog Table
         val changeLogEntity = ApkChangeLogEntity(
             packageName= packageName,
             appHash= appHash,
-            oldAppCertHash= appHash,
-            permissionsAdded = permissions
+            oldAppCertHash= appCertHash,
+            permissionsAdded = ListToStringConverterUtil.stringToList(permissions)
         )
         apkChangeLogDao.insert(changeLogEntity)
-
-        NotificationUtil.sendNotification(
-            context, "$packageName was installed", message
-        )
     }
     companion object {
         fun newInstance(): ApkInstallReceiver {

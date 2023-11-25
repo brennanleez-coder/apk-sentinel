@@ -164,13 +164,8 @@ class ApkSentinel : Application() {
             val permissions = packageInfo.requestedPermissions
             val isSystemApp =
                 (packageInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-//            Log.d("Apk Sentinel", permissions.joinToString("\n"))
-
             val apkPath = packageInfo.applicationInfo.sourceDir
-//            Log.d("Check Path", "$packageName: $apkPath")
-//            val appHash = HashUtil.getSHA256HashOfFile(apkPath)
             val appHash = HashUtil.hashApkWithSHA256(apkPath)
-
             val appCertHash = HashUtil.hashCertWithSHA256(packageName, packageManager)
 
             val apkItem = appCertHash?.let {
