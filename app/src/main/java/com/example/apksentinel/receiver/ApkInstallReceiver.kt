@@ -46,7 +46,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
     private val receiverScope = CoroutineScope(Dispatchers.IO)
 
     override fun onReceive(context: Context?, intent: Intent) {
-        receiverScope.launch(Dispatchers.IO) {
+        receiverScope.launch {
             handleIntent(context, intent)
         }
 
@@ -58,26 +58,22 @@ class ApkInstallReceiver : BroadcastReceiver() {
             return
         }
 
-
         packageName = intent.data?.encodedSchemeSpecificPart.toString()
         val action = intent.action
-
 
 
         // When simulating updates, PACKAGE_REMOVED -> PACKAGE_ADDED -> PACKAGE_REPLACED is captured
         // Filter out PACKAGE_REMOVED and PACKAGE_ADDED and only handle PACKAGE_REPLACED
         // ONLY WHEN the package can already be found in PackageManager signifying Updates
         val packageManager = context.packageManager
-
         println(action)
-
         val database = ApkItemDatabase.getDatabase(context)
         val apkItemDao = database.apkItemDao()
         val apkChangeLogDao = database.apkChangeLogDao()
+        println("apkItemDao: $apkItemDao")
+        println("apkCHangeLogDao: $apkChangeLogDao")
 
         if (packageName != null) {
-
-
             if (action == Intent.ACTION_PACKAGE_ADDED || action == Intent.ACTION_PACKAGE_REPLACED) {
                 val packageInfo =
                     packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
@@ -96,16 +92,11 @@ class ApkInstallReceiver : BroadcastReceiver() {
                 lastUpdateDate = packageInfo.lastUpdateTime
                 isSystemApp =
                     (packageInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-
-
-
                 permissions = if (packageInfo.requestedPermissions != null) {
                     ListToStringConverterUtil.listToString(packageInfo.requestedPermissions.toList())
                 } else {
                     ""
                 }
-
-
 
                 try {
                     when (action) {
@@ -289,6 +280,17 @@ class ApkInstallReceiver : BroadcastReceiver() {
         if (context == null || packageName == null) {
             return
         }
+        val changeLogEntity = ApkChangeLogEntity(
+            packageName= packageName,
+            appHash= appHash,
+            oldAppCertHash= appCertHash,
+            newAppCertHash="",
+            permissionsRemoved=ListToStringConverterUtil.stringToList(""),
+            permissionsAdded = ListToStringConverterUtil.stringToList(permissions)
+        )
+        println(changeLogEntity)
+        apkChangeLogDao.insert(changeLogEntity)
+        println(apkChangeLogDao.getAll())
 
 
         // Insert into installed_apk
@@ -307,14 +309,16 @@ class ApkInstallReceiver : BroadcastReceiver() {
             isDeleted = false,
         )
         apkItemDao.insert(apkToInsert)
-        println("${apkToInsert.packageName} has been inserted")
 
 
         // Check if appCertHash exists in installed_apk
         val listOfTrustedAppCertHash: List<String> = apkItemDao.getAllAppCertHash()
         val isTrustedIncomingAppCertHash = listOfTrustedAppCertHash.contains(this.appCertHash)
         val message: String =
-            "$packageName's App Cert is" + if (isTrustedIncomingAppCertHash) "trusted" else "not trusted"
+            "$packageName's App Cert is " + if (isTrustedIncomingAppCertHash) "trusted" else "not trusted"
+
+
+
 
         withContext(Dispatchers.Main) {
             NotificationUtil.sendNotification(
@@ -323,14 +327,6 @@ class ApkInstallReceiver : BroadcastReceiver() {
                 message
             )
         }
-        // First record of respective package name in ApkChangeLog Table
-        val changeLogEntity = ApkChangeLogEntity(
-            packageName= packageName,
-            appHash= appHash,
-            oldAppCertHash= appCertHash,
-            permissionsAdded = ListToStringConverterUtil.stringToList(permissions)
-        )
-        apkChangeLogDao.insert(changeLogEntity)
     }
     companion object {
         fun newInstance(): ApkInstallReceiver {

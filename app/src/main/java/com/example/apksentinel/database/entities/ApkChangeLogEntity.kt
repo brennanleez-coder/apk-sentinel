@@ -10,9 +10,9 @@ data class ApkChangeLogEntity(
     val id: Long = 0,
     val packageName: String,
     val appHash: String,
-    val oldAppCertHash: String? = null,
-    val newAppCertHash: String? = null,
-    val permissionsAdded: List<String>? = null,
-    val permissionsRemoved: List<String>? = null,
+    val oldAppCertHash: String?,
+    val newAppCertHash: String?,
+    val permissionsAdded: List<String>?,
+    val permissionsRemoved: List<String>?,
     val timestamp: Long = System.currentTimeMillis()
 )
