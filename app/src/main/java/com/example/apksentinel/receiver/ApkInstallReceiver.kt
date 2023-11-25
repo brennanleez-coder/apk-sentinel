@@ -116,6 +116,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
                                     "Apk:${apkItem.packageName} isDeleted has been updated, to ${it.isDeleted}"
                                 )
                             }
+                            //TODO insert into change log
 
                         }
                         Intent.ACTION_PACKAGE_ADDED -> {
@@ -126,9 +127,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
                             val apkRetrieved = apkItemDao.getApkItemByPackageName(packageName)
                             if (apkRetrieved != null) {
                                 // Reinstallation
-                                handleReinstallation(context, apkRetrieved, apkItemDao,
-                                    permissions, appHash, appCertHash, versionName, versionCode)
-
+                                handleReinstallation(context, apkRetrieved, apkItemDao)
                             } else {
                                 //Fresh Installation
                                 handleFreshInstallation(apkItemDao, apkChangeLogDao, context)
@@ -188,15 +187,10 @@ class ApkInstallReceiver : BroadcastReceiver() {
     context: Context,
     apkRetrieved: ApkItem,
     apkItemDao: ApkItemDao,
-    permissions: String,
-    appHash: String,
-    appCertHash: String,
-    versionName: String,
-    versionCode: Int
     ) {
         val isSamePermissions = permissions?.equals(ListToStringConverterUtil.listToString(apkRetrieved.permissions)) // Convert both permissions to String then compare
         val isSameAppHash = appHash == apkRetrieved.appHash
-        val isSameAppCertHash = appCertHash == apkRetrieved.appCertHash
+        val isSameAppCertHash = apkRetrieved.appCertHash.equals(this.appCertHash)
         val isSameVersionName = versionName == apkRetrieved.versionName
         val isSameVersionCode = versionCode == apkRetrieved.versionCode
 
@@ -214,8 +208,8 @@ class ApkInstallReceiver : BroadcastReceiver() {
             it.appName = apkRetrieved.appName
             it.packageName = apkRetrieved.packageName
             it.appIcon = apkRetrieved.appIcon
-            this.versionCode = this.versionCode
-            this.versionName = this.versionName
+            it.versionCode = this.versionCode
+            it.versionName = this.versionName
             it.installDate = System.currentTimeMillis()
             it.lastUpdateDate = System.currentTimeMillis()
             it.permissions = ListToStringConverterUtil.stringToList(this.permissions)
@@ -226,19 +220,26 @@ class ApkInstallReceiver : BroadcastReceiver() {
             apkItemDao.updateApkItem(it)
         }
 
+
+
+        // Check if appCertHash is different from previous installation
+        val message: String =
+            "$packageName's App Cert is " + if (isSameAppCertHash) "trusted" else "not trusted"
+
+
+
+
         if (conditions.all { it!! }) {/*Trigger Backend component
-                                    *
-                                    *
-                                    */
-            } else {
+                                        *
+                                        *
+                                        */
+                //capture different app cert here and insert into change log and backend comoponent
+                }
 
-
-            }
-
-        withContext(Dispatchers.Main) {
-            NotificationUtil.sendNotification(
-                context, "App Reinstallation Detected", "${apkRetrieved.appName}: ${apkRetrieved.packageName} uninstalled at ${DateUtil.formatDate(System.currentTimeMillis())}."
-            )
+            withContext(Dispatchers.Main) {
+                NotificationUtil.sendNotification(
+                    context, "App Reinstallation Detected", "${apkRetrieved.appName}: ${apkRetrieved.packageName} uninstalled at ${DateUtil.formatDate(System.currentTimeMillis())}."
+                )
         }
     }
 
