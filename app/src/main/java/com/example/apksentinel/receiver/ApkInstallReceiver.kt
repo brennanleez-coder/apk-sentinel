@@ -175,18 +175,25 @@ class ApkInstallReceiver : BroadcastReceiver() {
     }
 
     private suspend fun sendApkForVerification(packageName: String, context: Context) {
-        val apkInfo = ApkInformation(packageName, this.appHash, this.appCertHash, this.permissions)
+        val apkInfo = ApkInformation(packageName, this.versionName, this.versionCode, this.appHash, this.appCertHash, this.permissions)
         val jsonBody = Gson().toJson(apkInfo)
 
         try {
             val response = HttpUtil.post("http://10.0.2.2:8000/submit_apk", jsonBody)
             val responseObj = Gson().fromJson(response, ApiResponse::class.java)
-            if (responseObj.status == "success") {
-                withContext(Dispatchers.Main) {
+            withContext(Dispatchers.Main) {
+                if (responseObj.status == "success") {
+
+                        NotificationUtil.sendNotification(
+                            context,
+                            "Verifying Apk",
+                            "$packageName sent to Sentinel Sight"
+                        )
+                } else {
                     NotificationUtil.sendNotification(
                         context,
-                        "Verifying Apk",
-                        "$packageName sent to Sentinel Sight"
+                        "Unable to verify apk",
+                        "$packageName was NOT sent to Sentinel Sight"
                     )
                 }
             }
