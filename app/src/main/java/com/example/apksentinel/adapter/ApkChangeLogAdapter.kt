@@ -15,6 +15,8 @@ class ApkChangeLogAdapter(var logs: List<ApkChangeLogEntity>) : RecyclerView.Ada
 
     class ApkChangeLogViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val packageNameTextView: TextView = itemView.findViewById(R.id.packageNameTextView)
+        val versionNameTextView: TextView = itemView.findViewById(R.id.versionNameTextView)
+        val versionCodeTextView: TextView = itemView.findViewById(R.id.versionCodeTextView)
         val appHashTextView: TextView = itemView.findViewById(R.id.appHashTextView)
         val oldAppCertHashTextView: TextView = itemView.findViewById(R.id.oldAppCertHashTextView)
         val newAppCertHashTextView: TextView = itemView.findViewById(R.id.newAppCertHashTextView)
@@ -37,6 +39,8 @@ class ApkChangeLogAdapter(var logs: List<ApkChangeLogEntity>) : RecyclerView.Ada
         val log = logs[position]
 
         holder.packageNameTextView.text = log.packageName
+        holder.versionNameTextView.text = "Version Name: ${log.versionName}"
+        holder.versionCodeTextView.text = "Version Code: ${log.versionCode.toString()}"
         holder.appHashTextView.text = "App Hash: ${log.appHash}"
         holder.oldAppCertHashTextView.text = "Old Cert Hash: ${log.oldAppCertHash ?: "N/A"}"
         holder.newAppCertHashTextView.text = "New Cert Hash: ${log.newAppCertHash ?: "N/A"}"

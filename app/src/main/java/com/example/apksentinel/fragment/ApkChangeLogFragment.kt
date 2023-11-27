@@ -13,13 +13,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.apksentinel.R
 import com.example.apksentinel.adapter.ApkChangeLogAdapter
 import com.example.apksentinel.database.ApkItemDatabase
-import com.example.apksentinel.database.entities.ApkChangeLogEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-//import kotlinx.android.synthetic.main.fragment_apk_change_log.*
 
 class ApkChangeLogFragment : Fragment() {
 
@@ -46,27 +44,6 @@ class ApkChangeLogFragment : Fragment() {
 
 
         recyclerView.layoutManager = LinearLayoutManager(context)
-        val mockLogs = listOf(
-            ApkChangeLogEntity(
-                packageName = "com.example.mockapp1",
-                appHash = "appHash1",
-                oldAppCertHash = "oldHash1",
-                newAppCertHash = "newHash1",
-                permissionsAdded = listOf("CAMERA", "MICROPHONE"),
-                permissionsRemoved = listOf(),
-                timestamp = System.currentTimeMillis()
-            ),
-            ApkChangeLogEntity(
-                packageName = "com.example.mockapp2",
-                appHash = "appHash2",
-                oldAppCertHash = "oldHash2",
-                newAppCertHash = "newHash2",
-                permissionsAdded = listOf(),
-                permissionsRemoved = listOf("LOCATION"),
-                timestamp = System.currentTimeMillis()
-            )
-            // Add more mock logs as required
-        )
         changeLogAdapter = ApkChangeLogAdapter(emptyList())
         recyclerView.adapter = changeLogAdapter
 
@@ -79,23 +56,13 @@ class ApkChangeLogFragment : Fragment() {
         coroutineScope.launch {
             try {
                 val logs = changeLogDao.getAll()
-
                 withContext(Dispatchers.Main) {
-                    if (logs.isEmpty()) {
-                        // If real logs are empty, update the adapter with mock data
-                        changeLogAdapter.updateData(mockLogs)
-                        tvChangeLogCount.text = "Total Logs: ${mockLogs.size}"
-                        tvEmptyState.visibility = View.GONE
-                        recyclerView.visibility = View.VISIBLE
-                        loaderProgressBar.visibility = View.GONE
-                    } else {
                         // If real logs are present, show the real logs
-                        changeLogAdapter.updateData(logs)
-                        tvChangeLogCount.text = "Total Logs: ${logs.size}"
-                        tvEmptyState.visibility = View.GONE
-                        recyclerView.visibility = View.VISIBLE
-                        loaderProgressBar.visibility = View.GONE
-                    }
+                    changeLogAdapter.updateData(logs.sortedByDescending { it.timestamp })
+                    tvChangeLogCount.text = "Total Logs: ${logs.size}"
+                    tvEmptyState.visibility = View.GONE
+                    recyclerView.visibility = View.VISIBLE
+                    loaderProgressBar.visibility = View.GONE
                 }
 
             } catch (e: Exception) {
@@ -110,7 +77,6 @@ class ApkChangeLogFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-//        coroutineScope.cancel()
     }
 
 

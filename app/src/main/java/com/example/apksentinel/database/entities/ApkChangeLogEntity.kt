@@ -4,11 +4,17 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "apk_change_log",indices = [Index(value = ["packageName"], unique = true)])
+
+@Entity(
+    tableName = "apk_change_log",
+    indices = [Index(value = ["packageName", "versionName", "versionCode"], unique = true)]
+)
 data class ApkChangeLogEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val packageName: String,
+    val versionName: String,
+    val versionCode: Int,
     val appHash: String,
     val oldAppCertHash: String?,
     val newAppCertHash: String?,
