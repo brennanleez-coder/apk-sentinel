@@ -98,7 +98,7 @@ class ApkSentinel : Application() {
                                         println("REinstallation found: ${it.packageName}")
                                     } else {
                                         // App is new, insert into database
-                                        println("App found: ${it.packageName}")
+//                                        println("App found: ${it.packageName}")
                                         insertIntoApkDatabase(apkItemDao, it)
                                     }
                                 }
