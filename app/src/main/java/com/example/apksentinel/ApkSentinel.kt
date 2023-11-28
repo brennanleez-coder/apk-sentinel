@@ -61,25 +61,49 @@ class ApkSentinel : Application() {
 
                             }
                             isInitialized.postValue(true)
-                            NotificationUtil.sendNotification(
-                                this@ApkSentinel,
-                                "Apk Sentinel",
-                                "Database populated"
-                            )
+
                         } else {
                             // Sync database with current phone state
+                            println("SYNCING DATABASE WITH PHONE STATE")
                             val databaseApks =
-                                apkItemDao.getAllApkItems() //returns a Flow<List<ApkItem>>
+                                apkItemDao.getAllApkItems() // Returns a Flow<List<ApkItem>>
                             databaseApks.collect { databaseApkList ->
                                 //For each item in localApkList, check if there is not such app in database, this returns new apps
-                                // LOGIC ERROR
-                                val newApps = localApkList.filter { newItem ->
-                                    databaseApkList.none { oldItem -> oldItem.packageName == newItem.packageName }
+                                val newOrReinstalledApps = localApkList.filter { localItem ->
+                                    databaseApkList.none { dbItem -> dbItem.packageName == localItem.packageName } ||
+                                            databaseApkList.any { dbItem -> (dbItem.packageName == localItem.packageName) && dbItem.isDeleted }
                                 }
-                                newApps.forEach {
-                                    insertIntoApkDatabase(apkItemDao, apkItem = it)
-                                    //                            Log.d("Apk Sentinel", "New app found: ${it.packageName}")
+
+
+                                newOrReinstalledApps.forEach {
+                                    if (databaseApkList.any { dbItem -> dbItem.packageName == it.packageName }) {
+                                        // App is reinstalled, update deletion status
+                                        it.isDeleted = false
+                                        val apkEntity = com.example.apksentinel.database.entities.ApkItem(
+                                            appName= it.appName,
+                                            packageName = it.packageName,
+                                            appIcon = DrawableUtil.convertDrawableToBase64String(it.appIcon)
+                                                .toString(),
+                                            versionName = it.versionName,
+                                            versionCode = it.versionCode,
+                                            installDate = it.installDate,
+                                            lastUpdateDate = it.lastUpdateDate,
+                                            permissions = it.permissions?.toList() ?: emptyList(),
+                                            isSystemApp = it.isSystemApp,
+                                            appHash = it.appHash,
+                                            appCertHash = it.appCertHash,
+                                            isDeleted = false,
+                                        )
+                                        apkItemDao.insert(apkEntity)
+                                        println("REinstallation found: ${it.packageName}")
+                                    } else {
+                                        // App is new, insert into database
+                                        println("App found: ${it.packageName}")
+                                        insertIntoApkDatabase(apkItemDao, it)
+                                    }
                                 }
+
+
                                 //for each item in databaseApkList, check if there is no such app in local phone state, this returns deleted apps
                                 val deletedApps = databaseApkList.filter { oldItem ->
                                     localApkList.none { newItem -> newItem.packageName == oldItem.packageName }
@@ -96,11 +120,13 @@ class ApkSentinel : Application() {
 
                             isInitialized.postValue(true)
                         }
-                        NotificationUtil.sendNotification(
-                            this@ApkSentinel,
-                            "Apk Sentinel",
-                            "Database synced"
-                        )
+                        withContext(Dispatchers.Main) {
+                            NotificationUtil.sendNotification(
+                                this@ApkSentinel,
+                                "Apk Sentinel",
+                                "Database synced"
+                            )
+                        }
                     }
                 } catch (e: Exception) {
                     isInitialized.postValue(false)

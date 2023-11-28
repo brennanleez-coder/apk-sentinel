@@ -6,7 +6,7 @@ import android.graphics.drawable.Drawable
 data class ApkItem(
     val appName: String,
     val packageName: String,
-    val appIcon: Drawable,
+    var appIcon: Drawable,
     val versionName: String?,
     val versionCode: Int,
     val installDate: Long,
@@ -15,6 +15,6 @@ data class ApkItem(
     val isSystemApp: Boolean,
     val appHash: String,
     val appCertHash: String,
-    val isDeleted: Boolean
+    var isDeleted: Boolean
 )
 //    : Parcelable
