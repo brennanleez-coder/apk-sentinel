@@ -181,22 +181,22 @@ class ApkInstallReceiver : BroadcastReceiver() {
         try {
             val response = HttpUtil.post("http://10.0.2.2:8000/submit_apk", jsonBody)
             val responseObj = Gson().fromJson(response, ApiResponse::class.java)
-            withContext(Dispatchers.Main) {
-                if (responseObj.status == "success") {
-
-                        NotificationUtil.sendNotification(
-                            context,
-                            "Verifying Apk",
-                            "$packageName sent to Sentinel Sight"
-                        )
-                } else {
-                    NotificationUtil.sendNotification(
-                        context,
-                        "Unable to verify apk",
-                        "$packageName was NOT sent to Sentinel Sight"
-                    )
-                }
-            }
+//            withContext(Dispatchers.Main) {
+//                if (responseObj.status == "success") {
+//
+//                        NotificationUtil.sendNotification(
+//                            context,
+//                            "Verifying Apk",
+//                            "$packageName sent to Sentinel Sight"
+//                        )
+//                } else {
+//                    NotificationUtil.sendNotification(
+//                        context,
+//                        "Unable to verify apk",
+//                        "$packageName was NOT sent to Sentinel Sight"
+//                    )
+//                }
+//            }
         } catch (e: Exception) {
             println("Exception: ${e.printStackTrace()}")
         }
@@ -371,8 +371,8 @@ class ApkInstallReceiver : BroadcastReceiver() {
             versionName = this.versionName,
             versionCode = this.versionCode,
             appHash= appHash,
-            oldAppCertHash= appCertHash,
-            newAppCertHash="",
+            oldAppCertHash= "",
+            newAppCertHash=appCertHash,
             permissionsRemoved=ListToStringConverterUtil.stringToList(""),
             permissionsAdded = ListToStringConverterUtil.stringToList(this.permissions)
         )

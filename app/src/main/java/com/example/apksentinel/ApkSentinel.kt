@@ -75,33 +75,33 @@ class ApkSentinel : Application() {
                                 }
 
 
-                                newOrReinstalledApps.forEach {
-                                    if (databaseApkList.any { dbItem -> dbItem.packageName == it.packageName }) {
-                                        // App is reinstalled, update deletion status
-                                        it.isDeleted = false
-                                        val apkEntity = com.example.apksentinel.database.entities.ApkItem(
-                                            appName= it.appName,
-                                            packageName = it.packageName,
-                                            appIcon = DrawableUtil.convertDrawableToBase64String(it.appIcon)
-                                                .toString(),
-                                            versionName = it.versionName,
-                                            versionCode = it.versionCode,
-                                            installDate = it.installDate,
-                                            lastUpdateDate = it.lastUpdateDate,
-                                            permissions = it.permissions?.toList() ?: emptyList(),
-                                            isSystemApp = it.isSystemApp,
-                                            appHash = it.appHash,
-                                            appCertHash = it.appCertHash,
-                                            isDeleted = false,
-                                        )
-                                        apkItemDao.insert(apkEntity)
-                                        println("REinstallation found: ${it.packageName}")
-                                    } else {
-                                        // App is new, insert into database
-//                                        println("App found: ${it.packageName}")
-                                        insertIntoApkDatabase(apkItemDao, it)
-                                    }
-                                }
+//                                newOrReinstalledApps.forEach {
+//                                    if (databaseApkList.any { dbItem -> dbItem.packageName == it.packageName }) {
+//                                        // App is reinstalled, update deletion status
+//                                        it.isDeleted = false
+//                                        val apkEntity = com.example.apksentinel.database.entities.ApkItem(
+//                                            appName= it.appName,
+//                                            packageName = it.packageName,
+//                                            appIcon = DrawableUtil.convertDrawableToBase64String(it.appIcon)
+//                                                .toString(),
+//                                            versionName = it.versionName,
+//                                            versionCode = it.versionCode,
+//                                            installDate = it.installDate,
+//                                            lastUpdateDate = it.lastUpdateDate,
+//                                            permissions = it.permissions?.toList() ?: emptyList(),
+//                                            isSystemApp = it.isSystemApp,
+//                                            appHash = it.appHash,
+//                                            appCertHash = it.appCertHash,
+//                                            isDeleted = false,
+//                                        )
+//                                        apkItemDao.insert(apkEntity)
+//                                        println("REinstallation found: ${it.packageName}")
+//                                    } else {
+//                                        // App is new, insert into database
+////                                        println("App found: ${it.packageName}")
+//                                        insertIntoApkDatabase(apkItemDao, it)
+//                                    }
+//                                }
 
 
                                 //for each item in databaseApkList, check if there is no such app in local phone state, this returns deleted apps
@@ -114,8 +114,6 @@ class ApkSentinel : Application() {
                                     it.isDeleted = true
                                     apkItemDao.updateApkItem(it)
                                 }
-
-                                //                        Log.d("Apk Sentinel", list.size.toString() + " retrieved")
                             }
 
                             isInitialized.postValue(true)
