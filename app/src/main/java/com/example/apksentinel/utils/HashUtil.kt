@@ -29,9 +29,6 @@ object HashUtil {
             val md5Digest = MessageDigest.getInstance("MD5")
             val sha1 = sha1Digest.digest(x509Certificate.encoded).joinToString("") { "%02x".format(it) }
             val md5 = md5Digest.digest(x509Certificate.encoded).joinToString("") { "%02x".format(it) }
-//            println("SHA-256: $sha256")
-//            println("SHA-1: $sha1")
-//            println("MD5: $md5")
 
             sha256
         } catch (e: Exception) {

@@ -67,7 +67,7 @@ class ApkChangeLogFragment : Fragment() {
 
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Log.e("DatabaseError", "Error retrieving change logs from database: ${e.message}")
+                    Log.e("Apk Sentinel - ApkChangeLogFragment", "Error retrieving change logs from database: ${e.message}")
                     loaderProgressBar.visibility = View.GONE
                 }
             }

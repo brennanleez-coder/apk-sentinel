@@ -70,8 +70,7 @@ class InstalledApksFragment : Fragment() {
 
         val database = ApkItemDatabase.getDatabase(this.requireContext())
         val apkItemDao = database.apkItemDao()
-//        Log.d("Apk Sentinel", "Retrieved Database Instance")
-//        Log.d("Apk Sentinel", "Retrieved Apk Item Dao")
+
 
 
         coroutineScope.launch {
@@ -204,11 +203,7 @@ class InstalledApksFragment : Fragment() {
         }
 
 
-        if (apkItem.isSystemApp) {
-            isSystemApp.isChecked = true
-        } else {
-            isSystemApp.isChecked = false
-        }
+        isSystemApp.isChecked = apkItem.isSystemApp
         appHash.text = apkItem.appHash
 
 

@@ -1,6 +1,5 @@
 package com.example.apksentinel.fragment
 
-import android.database.sqlite.SQLiteException
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -22,15 +21,11 @@ import com.example.apksentinel.ApkSentinel
 import com.example.apksentinel.R
 import com.example.apksentinel.database.ApkItemDatabase
 import com.example.apksentinel.database.dao.ApkItemDao
-import com.example.apksentinel.model.AppPermissionCount
 import com.example.apksentinel.repository.AppRepository
 import com.example.apksentinel.viewmodel.DashboardViewModel
 import com.example.apksentinel.viewmodel.factory.DashboardViewModelFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 
 class DashboardFragment : Fragment() {
@@ -58,10 +53,10 @@ class DashboardFragment : Fragment() {
 //            val isInitialised = viewModel.isInitialized
 
 //            if (isInitialised.value == true) {
-                observeViewModel(view)
+            observeViewModel(view)
 //            }
         } catch (e: Exception) {
-            Log.e("Apk Sentinel", "${e.printStackTrace().toString()}")
+            Log.e("Apk Sentinel - DashboardFragment", "${e.printStackTrace().toString()}")
         }
     }
 

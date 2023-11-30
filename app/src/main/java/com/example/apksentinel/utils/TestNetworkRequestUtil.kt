@@ -16,10 +16,10 @@ object TestNetworkRequestUtil {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = HttpUtil.post(serverString, postBody)
-                println("POST Response: $response")
+                Log.d("Apk Sentinel - TestNetworkRequestUtil", "POST Response: $response")
 
                 val response2 = HttpUtil.get("http://10.0.2.2:8000/")
-                println("GET Response: $response2")
+                Log.d("Apk Sentinel - TestNetworkRequestUtil", "GET Response: $response2")
             } catch (e: Exception) {
                 e.printStackTrace()
             }

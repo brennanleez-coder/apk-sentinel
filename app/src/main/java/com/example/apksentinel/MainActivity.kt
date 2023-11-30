@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }.attach()
         } catch (e: Exception) {
-            Log.e("Apk Sentinel", "Caught in MainActivity $e.printStackTrace().toString() ")
+            Log.e("Apk Sentinel - MainActivity", "${e.printStackTrace()}")
         }
     }
 

@@ -58,8 +58,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
 
         packageName = intent.data?.encodedSchemeSpecificPart.toString()
         val action = intent.action
-        println("$action : $packageName")
-
+        Log.d("Apk Sentinel - ApkInstallReceiver", "$action: $packageName")
 
         val packageManager = context.packageManager
         val database = ApkItemDatabase.getDatabase(context)
@@ -107,7 +106,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
                             *  CASE 2: Re-installation
                             */
                             if (!intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
-                                println("PACKAGED ADDED TRIGGERED")
+
                                 val apkRetrieved = apkItemDao.getApkItemByPackageName(packageName)
                                 if (apkRetrieved != null) {
                                     // Reinstallation
@@ -121,18 +120,17 @@ class ApkInstallReceiver : BroadcastReceiver() {
                         }
                     }
                     // Send to Backend component to check for Apk Legitimacy
-                    sendApkForVerification(packageName, context)
+                    sendApkForVerification(packageName)
                 } catch (e: PackageManager.NameNotFoundException) {
-                    Log.e("Apk Sentinel", "$context: Package Name Not Found")
+                    Log.e("Apk Sentinel - ApkInstallReceiver", "$context: Package Name Not Found")
                 } catch (exception: Exception) {
-                    Log.e("Capture Install intent", "$exception")
+                    Log.e("Apk Sentinel - ApkInstallReceiver", "$exception")
                 }
             }
         }
         if (action == Intent.ACTION_PACKAGE_REMOVED) {
             if (packageName != null) {
                 if (!intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
-                    println("PACKAGED REMOVED TRIGGERED")
                     // Handle package removed (not part of an update)
                     handlePackageRemoved(context, packageName, apkItemDao)
                 }
@@ -142,16 +140,21 @@ class ApkInstallReceiver : BroadcastReceiver() {
 
     }
 
+    //    Handle Update of an existing application in apk_database
+    //    @params: apkItemDao: ApkItemDao for database operations on installed_apk
+    //    @params: apkChangeLogDao: ApkChangeLogDao for database operations on apk_change_log
+    //    @params: context: Context of the Application
+    //    @return: void
     private suspend fun handleUpdate(
         apkItemDao: ApkItemDao,
         apkChangeLogDao: ApkChangeLogDao,
         context: Context
     ) {
-        println("UPDATE TRIGGERED")
-        val apkItem = packageName?.let { apkItemDao.getApkItemByPackageName(it) }
+        val apkItem = apkItemDao.getApkItemByPackageName(packageName)
         if (apkItem != null) {
-            updateApkEntityInDatabase(apkItem, apkItemDao, true)
             val (listOfPermissionsAdded, listOfPermissionsRemoved) = checkPermissionChanges(apkItem)
+            updateApkEntityInDatabase(apkItem, apkItemDao, true)
+
             val changeLogEntity = ApkChangeLogEntity(
                 packageName = this.packageName,
                 versionName = this.versionName,
@@ -174,49 +177,42 @@ class ApkInstallReceiver : BroadcastReceiver() {
         }
     }
 
-    private suspend fun sendApkForVerification(packageName: String, context: Context) {
+    //    Send Apk Information to Sentinel Sight
+    //    @params: context: packageName: Package Name of the captured intent
+    //    @return: void
+    private suspend fun sendApkForVerification(packageName: String) {
         val apkInfo = ApkInformation(packageName, this.versionName, this.versionCode, this.appHash, this.appCertHash, this.permissions)
         val jsonBody = Gson().toJson(apkInfo)
 
         try {
             val response = HttpUtil.post("http://10.0.2.2:8000/submit_apk", jsonBody)
             val responseObj = Gson().fromJson(response, ApiResponse::class.java)
-//            withContext(Dispatchers.Main) {
-//                if (responseObj.status == "success") {
-//
-//                        NotificationUtil.sendNotification(
-//                            context,
-//                            "Verifying Apk",
-//                            "$packageName sent to Sentinel Sight"
-//                        )
-//                } else {
-//                    NotificationUtil.sendNotification(
-//                        context,
-//                        "Unable to verify apk",
-//                        "$packageName was NOT sent to Sentinel Sight"
-//                    )
-//                }
-//            }
+                if (responseObj.status == "success") {
+                    Log.d("Verifying Apk", "$packageName sent to Sentinel Sight")
+                } else {
+                   Log.d(
+                        "Verifying Apk Error",
+                        "$packageName was NOT sent to Sentinel Sight"
+                    )
+                }
         } catch (e: Exception) {
-            println("Exception: ${e.printStackTrace()}")
+            Log.e("Apk Sentinel - ApkInstallReceiver", "${e.printStackTrace()}")
+
         }
     }
 
 
-//    Handle Reinstallation of an existing application in apk_database
-//    @params: context: Current Apk Context
-//    @params apkRetrieved: Retrieve the apk from database
-//    @params: apkItemDao: ApkItemDao for database operations on installed_apk
-//    @params: permissions, appHash, appCertHash, versionName, versionCode:
-//              information retrieved from re-installed apk
-//    @return: void
+    //    Handle Reinstallation of an existing application in apk_database
+    //    @params: context: Current Apk Context
+    //    @params apkRetrieved: Retrieve the apk from database
+    //    @params: apkItemDao: ApkItemDao for database operations on installed_apk
+    //    @return: void
     private suspend fun handleReinstallation(
     context: Context,
     apkRetrieved: ApkItem,
     apkItemDao: ApkItemDao,
     apkChangeLogDao: ApkChangeLogDao
     ) {
-        println("HANDLE REINSTALLTION")
         val isSamePermissions = this.permissions?.equals(ListToStringConverterUtil.listToString(apkRetrieved.permissions)) // Convert both permissions to String then compare
         val isSameAppHash = this.appHash == apkRetrieved.appHash
         val isSameAppCertHash = this.appCertHash.equals(apkRetrieved.appCertHash)
@@ -230,14 +226,15 @@ class ApkInstallReceiver : BroadcastReceiver() {
             isSameVersionName,
             isSameVersionCode
         )
-        println(conditions.joinToString(","))
+        Log.d("Apk Sentinel - ApkInstallReceiver", "$conditions")
+
 
         updateApkEntityInDatabase(apkRetrieved, apkItemDao)
 
 
         // Check if appCertHash is different from previous installation
         val message: String =
-            "$packageName's App Cert is " + if (isSameAppCertHash) "trusted" else "not trusted"
+            if (isSameAppCertHash) "trusted" else "not trusted"
 
         if (!conditions.all { it!! }) {
             if (!isSamePermissions!!) {
@@ -261,40 +258,39 @@ class ApkInstallReceiver : BroadcastReceiver() {
 
             withContext(Dispatchers.Main) {
                 NotificationUtil.sendNotification(
-                    context, "App Reinstallation Detected", "${apkRetrieved.appName}: ${apkRetrieved.packageName} reinstalled at ${DateUtil.formatDate(System.currentTimeMillis())}."
+                    context, "App Reinstallation Detected", "${apkRetrieved.appName}: ${apkRetrieved.packageName}, $message, reinstalled at ${DateUtil.formatDate(System.currentTimeMillis())}."
                 )
         }
     }
 
+    //    Determines Permissions Added or Removed during Installation and Update
+    //    @params apkRetrieved: Apk retrieved from installed_apk
+    //    @return Pair(permissionsAdded, permissionsRemoved): Pair<List<String>, List<String>>:
     private fun checkPermissionChanges(apkRetrieved: ApkItem): Pair<List<String>, List<String>> {
         val oldPermissionsSet = apkRetrieved.permissions.toSet() // Already a List<String>
         val newPermissionsSet = this.permissions.split(",").map { it.trim() }.toSet()
+        Log.d("Apk Sentinel - ApkInstallReceiver", "\"Old permission set: $oldPermissionsSet\"")
+        Log.d("Apk Sentinel - ApkInstallReceiver", "New permission set: $newPermissionsSet")
 
-        println("Old permission set: $oldPermissionsSet")
-        println("New permission set: $newPermissionsSet")
 
         // Permissions added in the new set
         val setOfPermissionsAdded = newPermissionsSet.subtract(oldPermissionsSet)
-        println("permissions added: $setOfPermissionsAdded")
+        Log.d("Apk Sentinel - ApkInstallReceiver", "permissions added: $setOfPermissionsAdded")
+
         // Permissions removed from the old set
         val setOfPermissionsRemoved = oldPermissionsSet.subtract(newPermissionsSet)
-        println("permissions removed: $setOfPermissionsRemoved")
+        Log.d("Apk Sentinel - ApkInstallReceiver", "permissions removed: $setOfPermissionsRemoved")
 
-        if (setOfPermissionsAdded.isEmpty() && setOfPermissionsRemoved.isEmpty()) {
-            println("No changes in permissions")
-        } else {
-            if (setOfPermissionsAdded.isNotEmpty()) {
-                println("Permissions Added: $setOfPermissionsAdded")
-            }
-            if (setOfPermissionsRemoved.isNotEmpty()) {
-                println("Permissions Removed: $setOfPermissionsRemoved")
-            }
-        }
         val listOfPermissionsAdded = setOfPermissionsAdded.toList()
         val listOfPermissionsRemoved = setOfPermissionsRemoved.toList()
         return Pair(listOfPermissionsAdded, listOfPermissionsRemoved)
     }
 
+    //    Handle update of an existing entity in installed_apk
+    //    @params: apkRetrieved: Current record of apk retrieved from installed_apk
+    //    @params: apkItemDao: ApkItemDao for database operations on installed_apk
+    //    @params: triggeredFromUpdate: Whether this method is called due to an update, defaultvalue = false
+    //    @return: void
     private fun updateApkEntityInDatabase(
         apkRetrieved: ApkItem,
         apkItemDao: ApkItemDao,
@@ -309,7 +305,6 @@ class ApkInstallReceiver : BroadcastReceiver() {
             it.versionCode = this.versionCode // New version code
             it.versionName = this.versionName // New version name
             if (triggedFromUpdate) {
-                println("UPDATE DB from Update")
                 // Install Date should not be changed upon update
                 it.installDate = it.installDate
             } else {
@@ -327,6 +322,11 @@ class ApkInstallReceiver : BroadcastReceiver() {
         }
     }
 
+    //    Handle uninstallation of a package
+    //    @params: packageName: Package name of the captured intent
+    //    @params: context: Context of the current application
+    //    @params: apkItemDao: ApkItemDao for database operations on installed_apk
+    //    @return: void
     private suspend fun handlePackageRemoved(
         context: Context, packageName: String?, apkItemDao: ApkItemDao
     ) {
@@ -357,6 +357,11 @@ class ApkInstallReceiver : BroadcastReceiver() {
 
     }
 
+    //    Handles first time installation of a package on the device
+    //    @params: apkItemDao: ApkItemDao for database operations on installed_apk
+    //    @params: apkChangeLogDao: ApkChangeLogDao for database operations on apk_change_log
+    //    @params: context: Context of the current application
+    //    @return: void
     private suspend fun handleFreshInstallation(
         apkItemDao: ApkItemDao,
         apkChangeLogDao: ApkChangeLogDao,

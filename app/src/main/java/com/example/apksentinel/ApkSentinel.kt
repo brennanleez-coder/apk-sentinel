@@ -64,7 +64,7 @@ class ApkSentinel : Application() {
 
                         } else {
                             // Sync database with current phone state
-                            println("SYNCING DATABASE WITH PHONE STATE")
+                            Log.d("Apk Sentinel ApkSentinel", "Syncing database with current phone state")
                             val databaseApks =
                                 apkItemDao.getAllApkItems() // Returns a Flow<List<ApkItem>>
                             databaseApks.collect { databaseApkList ->
@@ -128,22 +128,22 @@ class ApkSentinel : Application() {
                     }
                 } catch (e: Exception) {
                     isInitialized.postValue(false)
-                    Log.e("ApkSentinelInit", "Exception during database operations", e)
+                    Log.e("Apk Sentinel - ApkSentinel", "Exception during database operations", e)
                 }
             }
         } catch (e: IllegalStateException) {
             isInitialized.postValue(false)
             if (e.message?.contains("Room cannot verify the data integrity") == true) {
-                Log.e("RoomError", "Schema has changed without an update in version number!")
+                Log.e("Apk Sentinel - ApkSentinel", "Schema has changed without an update in version number!")
             } else {
-                Log.e("Error", e.message ?: "An error occurred")
+                Log.e("Apk Sentinel - ApkSentinel", e.message ?: "An error occurred")
             }
         } catch (e: IllegalArgumentException) {
             e.printStackTrace()
-            Log.e("Apk Sentinel", "$e.message")
+            Log.e("Apk Sentinel - ApkSentinel", "$e.message")
         } catch (e: RuntimeException) {
             e.printStackTrace()
-            Log.e("Apk Sentinel", "$e.message")
+            Log.e("Apk Sentinel - ApkSentinel", "$e.message")
         }
     }
 
