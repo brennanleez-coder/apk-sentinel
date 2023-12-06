@@ -171,7 +171,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
                 NotificationUtil.sendNotification(
                     context,
                     "App Update",
-                    "$appName: $packageName updated at ${DateUtil.formatDate(System.currentTimeMillis())}"
+                    "$appName: $packageName updated to version code: $versionCode at ${DateUtil.formatDate(System.currentTimeMillis())}"
                 )
             }
         }
@@ -234,7 +234,7 @@ class ApkInstallReceiver : BroadcastReceiver() {
 
         // Check if appCertHash is different from previous installation
         val message: String =
-            if (isSameAppCertHash) "trusted" else "not trusted"
+            "App Cert is " + if (isSameAppCertHash) "trusted" else "not trusted"
 
         if (!conditions.all { it!! }) {
             if (!isSamePermissions!!) {
