@@ -187,14 +187,14 @@ class ApkInstallReceiver : BroadcastReceiver() {
         try {
             val response = HttpUtil.post("http://10.0.2.2:8000/submit_apk", jsonBody)
             val responseObj = Gson().fromJson(response, ApiResponse::class.java)
-                if (responseObj.status == "success") {
-                    Log.d("Verifying Apk", "$packageName sent to Sentinel Sight")
-                } else {
-                   Log.d(
-                        "Verifying Apk Error",
+            if (responseObj.status == "success") {
+                Log.d("Apk Sentinel - Verifying Apk", "$packageName sent to Sentinel Sight")
+            } else {
+                Log.d(
+                        "Apk Sentinel - Verifying Apk Error",
                         "$packageName was NOT sent to Sentinel Sight"
-                    )
-                }
+                )
+            }
         } catch (e: Exception) {
             Log.e("Apk Sentinel - ApkInstallReceiver", "${e.printStackTrace()}")
 
@@ -228,10 +228,6 @@ class ApkInstallReceiver : BroadcastReceiver() {
         )
         Log.d("Apk Sentinel - ApkInstallReceiver", "$conditions")
 
-
-        updateApkEntityInDatabase(apkRetrieved, apkItemDao)
-
-
         // Check if appCertHash is different from previous installation
         val message: String =
             "App Cert is " + if (isSameAppCertHash) "trusted" else "not trusted"
@@ -255,8 +251,10 @@ class ApkInstallReceiver : BroadcastReceiver() {
 
             }
         }
+        updateApkEntityInDatabase(apkRetrieved, apkItemDao)
 
-            withContext(Dispatchers.Main) {
+
+        withContext(Dispatchers.Main) {
                 NotificationUtil.sendNotification(
                     context, "App Reinstallation Detected", "${apkRetrieved.appName}: ${apkRetrieved.packageName}, $message, reinstalled at ${DateUtil.formatDate(System.currentTimeMillis())}."
                 )
