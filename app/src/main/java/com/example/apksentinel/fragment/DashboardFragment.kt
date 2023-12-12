@@ -53,21 +53,29 @@ class DashboardFragment : Fragment() {
 //            val isInitialised = viewModel.isInitialized
 
 //            if (isInitialised.value == true) {
-            observeViewModel(view)
+            setupObservers()
 //            }
         } catch (e: Exception) {
             Log.e("Apk Sentinel - DashboardFragment", "${e.printStackTrace().toString()}")
         }
     }
 
-    private fun observeViewModel(view: View) {
+    private fun setupObservers() {
         viewModel.systemAppsCount.observe(viewLifecycleOwner) { systemAppsCount ->
-            viewModel.nonSystemAppsCount.observe(viewLifecycleOwner) { nonSystemAppsCount ->
-                initPieChart(view, systemAppsCount, nonSystemAppsCount)
-            }
+            updateUI(systemAppsCount, viewModel.nonSystemAppsCount.value ?: 0)
         }
-        // Add observers for any other LiveData from your ViewModel
+
+        viewModel.nonSystemAppsCount.observe(viewLifecycleOwner) { nonSystemAppsCount ->
+            updateUI(viewModel.systemAppsCount.value ?: 0, nonSystemAppsCount)
+        }
     }
+
+    private fun updateUI(systemAppsCount: Int, nonSystemAppsCount: Int) {
+        // Update your UI here
+        initPieChart(requireView(), systemAppsCount, nonSystemAppsCount)
+    }
+
+
     private fun initPieChart(view: View, systemAppsCount: Int, nonSystemAppsCount: Int) {
         val pieChartView: AnyChartView = view.findViewById(R.id.pie_chart)
         APIlib.getInstance().setActiveAnyChartView(pieChartView)
